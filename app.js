@@ -213,8 +213,8 @@ const FIELD_MAP = [
   { id: 'f-contracts',   label: 'Контрактные поставки',            keys: ['контрактные поставки','контракт','долгосрочн'] },
   { id: 'f-penalties',   label: 'Штрафные санкции',                keys: ['штраф','неустойка','penalties','санкц'] },
   { id: 'f-rent-income', label: 'Аренда оборудования (доход)',     keys: ['аренда оборудован','сдача в аренду','аренда актив','доход аренд'] },
-  { id: 'f-titan',       label: 'Буровая компания Титан',          keys: ['титан','titan','буровая','тоо тит','тоо «тит','ооо тит','drilling'] },
-  { id: 'f-payroll',     label: 'ФОТ и налоги',                   keys: ['фот','зарплат','salary','payroll','оплата труд','налог с зарп','соц отч','пенсионн','инпн','ипн','фонд оплат','лд','физ лицо','физическое лицо'] },
+  { id: 'f-titan',       label: 'Буровая компания Титан',          keys: ['титан','titan','буровая','тоо тит','тоо «тит','ооо тит','drilling','тоо "титан','ип титан'] },
+  { id: 'f-payroll',     label: 'ФОТ и налоги',                   keys: ['фот','зарплат','salary','payroll','оплата труд','налог с зарп','соц отч','пенсионн','инпн','ипн','фонд оплат','лд','физ лицо','физическое лицо','соцналог','корпоративн налог','кпн','ндфл'] },
   { id: 'f-rent',        label: 'Аренда офиса / инфраструктура',   keys: ['аренда офис','аренда помещ','аренда склад','коммунал','электр','газ','вода','инфраструктур'] },
   { id: 'f-insurance',   label: 'Страхование',                     keys: ['страхован','insurance','страховка','полис'] },
   { id: 'f-repair',      label: 'Ремонт и эксплуатация',           keys: ['ремонт','эксплуатац','тех обслуж','запчаст','зип','техническ обслуж','repair','maintenance','сервис'] },
@@ -224,7 +224,14 @@ const FIELD_MAP = [
 ];
 
 // Категории доходов для автоматического распознавания
-const INCOME_KEYS = ['выручка','реализац','продажа нефти','доход от реализ','поступлен','revenue','income','приход','зачислен'];
+const INCOME_KEYS = [
+  'выручка','реализац','продажа нефти','доход от реализ','поступлен','revenue','income','приход','зачислен',
+  'лайнс джамп','lines jump','lines-jump','linesjump','лайнсджамп',   // Лайнс Джамп — основной источник дохода
+  'аго',                                                                // АГО — получает прибыль от Лайнс Джамп
+];
+
+// Идентификаторы собственного счёта (игнорируем как внутренние переводы)
+const OWN_ACCOUNT_KEYS = ['сбк','сбс','sbk','sbs'];
 
 function matchField(text) {
   const t = String(text).toLowerCase().trim();
@@ -301,29 +308,46 @@ function findLabelCol(rows) {
   return 0;
 }
 
+function isOwnAccount(text) {
+  const t = String(text).toLowerCase().trim();
+  return OWN_ACCOUNT_KEYS.some(k => t.includes(k));
+}
+
 // Суммирует транзакции по маппингу
 function aggregateSheet(rows, labelCol, amountCol) {
-  const totals = {}; // fieldId → sum
-  const byCounterparty = {}; // label → {fieldId, sum, count}
-  const unmatched = {}; // label → sum
+  const totals = {};         // fieldId → sum
+  const byCounterparty = {}; // label → {fieldId, sum, count, type}
+  const unmatched = {};      // label → sum
+  const incomeLines = {};    // label → sum (доходы по контрагентам)
   let totalIncome = 0;
 
   for (let ri = 1; ri < rows.length; ri++) {
     const row   = rows[ri];
+    // Берём все текстовые ячейки строки для поиска метки (шире, чем одна колонка)
     const label = String(row[labelCol] || '').trim();
-    const num   = cleanNum(row[amountCol]);
+    if (!label) continue;
 
-    if (!label || num === null || num <= 0) continue;
+    const num = cleanNum(row[amountCol]);
+    if (num === null || num <= 0) continue;
 
+    // Собственный счёт — пропускаем (внутренний перевод)
+    if (isOwnAccount(label)) continue;
+
+    // Лайнс Джамп / АГО / прочие доходы
     if (isIncomeRow(label)) {
       totalIncome += num;
+      incomeLines[label] = (incomeLines[label] || 0) + num;
+      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: '__income__', fieldLabel: 'Доход (выручка)', sum: 0, count: 0, type: 'income' };
+      byCounterparty[label].sum   += num;
+      byCounterparty[label].count += 1;
       continue;
     }
 
+    // Расходы — автоматический маппинг
     const match = matchField(label);
     if (match) {
       totals[match.id] = (totals[match.id] || 0) + num;
-      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: match.id, fieldLabel: match.label, sum: 0, count: 0 };
+      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: match.id, fieldLabel: match.label, sum: 0, count: 0, type: 'expense' };
       byCounterparty[label].sum   += num;
       byCounterparty[label].count += 1;
     } else {
@@ -331,7 +355,7 @@ function aggregateSheet(rows, labelCol, amountCol) {
     }
   }
 
-  return { totals, byCounterparty, unmatched, totalIncome };
+  return { totals, byCounterparty, unmatched, totalIncome, incomeLines };
 }
 
 // Основная функция разбора всех листов
@@ -399,42 +423,90 @@ function renderPreview(result, filename) {
   parsedData = { ...allTotals };
 
   const fmtN = n => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+
+  // Считаем итоги расходов
+  const totalExpenses = Object.values(allTotals).reduce((a, b) => a + b, 0);
+  const profit = grandIncome - totalExpenses;
+
+  // Разделяем доходные и расходные строки
+  const incomeRows  = Object.entries(allCounterpart).filter(([, v]) => v.type === 'income');
+  const expenseRows = Object.entries(allCounterpart).filter(([, v]) => v.type === 'expense');
+
   let html = '';
 
-  // Сводка по листам
-  html += `<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">
-    Листов обработано: <strong style="color:var(--text)">${sheetSummaries.length}</strong> &nbsp;|&nbsp;
-    Доходы: <strong style="color:var(--green)">₸${fmtN(grandIncome)}</strong>
+  // ── Итоговая сводка ──
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Доходы (Лайнс Джамп / АГО)</div>
+      <div style="font-size:16px;font-weight:700;color:var(--green)">₸${fmtN(grandIncome)}</div>
+    </div>
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Расходы (итого)</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red)">₸${fmtN(totalExpenses)}</div>
+    </div>
+    <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Чистая прибыль</div>
+      <div style="font-size:16px;font-weight:700;color:${profit>=0?'var(--green)':'var(--red)'}">₸${fmtN(profit)}</div>
+    </div>
   </div>`;
 
-  // Таблица: распознанные → форма
-  if (Object.keys(allCounterpart).length > 0) {
-    html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Распознанные транзакции</div>`;
-    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Лист</th><th>Сумма (₸)</th><th>Категория</th></tr></thead><tbody>`;
-    for (const [label, info] of Object.entries(allCounterpart)) {
+  // Листы
+  html += `<div style="font-size:11px;color:var(--text2);margin-bottom:12px">
+    Листов обработано: <strong style="color:var(--text)">${sheetSummaries.length}</strong>
+    &nbsp;(${sheetSummaries.map(s => s.sheetName).join(', ')})
+  </div>`;
+
+  // ── Доходы ──
+  if (incomeRows.length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">▲ Доходы</div>`;
+    html += `<table><thead><tr><th>Контрагент</th><th>Лист</th><th>Транзакций</th><th>Сумма (₸)</th><th>Статус</th></tr></thead><tbody>`;
+    for (const [label, info] of incomeRows) {
+      const sheet = sheetSummaries.find(s => s.byCounterparty[label])?.sheetName || '—';
+      html += `<tr>
+        <td><strong>${label}</strong></td>
+        <td style="color:var(--text2);font-size:11px">${sheet}</td>
+        <td style="color:var(--text2)">${info.count}</td>
+        <td style="font-weight:700;color:var(--green)">₸${fmtN(info.sum)}</td>
+        <td class="mapped">✓ Доход</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  // ── Расходы — распознанные ──
+  if (expenseRows.length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">▼ Расходы — распознаны автоматически</div>`;
+    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Лист</th><th>Транзакций</th><th>Сумма (₸)</th><th>Категория</th></tr></thead><tbody>`;
+    for (const [label, info] of expenseRows) {
       const sheet = sheetSummaries.find(s => s.byCounterparty[label])?.sheetName || '—';
       html += `<tr>
         <td>${label}</td>
         <td style="color:var(--text2);font-size:11px">${sheet}</td>
-        <td style="font-weight:600">${fmtN(info.sum)}</td>
+        <td style="color:var(--text2)">${info.count}</td>
+        <td style="font-weight:600">₸${fmtN(info.sum)}</td>
         <td class="mapped">→ ${info.fieldLabel}</td>
       </tr>`;
     }
     html += `</tbody></table>`;
   }
 
-  // Таблица: нераспознанные
+  // ── Нераспознанные — ручной маппинг ──
   if (Object.keys(allUnmatched).length > 0) {
-    html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Нераспознанные строки</div>`;
-    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Сумма (₸)</th><th>Действие</th></tr></thead><tbody>`;
+    html += `<div style="font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">? Нераспознанные строки — выберите категорию</div>`;
+    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Сумма (₸)</th><th>Назначить категорию</th></tr></thead><tbody>`;
     for (const [label, sum] of Object.entries(allUnmatched)) {
       html += `<tr>
         <td>${label}</td>
-        <td>${fmtN(sum)}</td>
-        <td><select class="manual-map" data-label="${label}" data-sum="${sum}" style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--text);font-size:11px">
-          <option value="">— выбрать категорию —</option>
-          ${FIELD_MAP.map(f => `<option value="${f.id}">${f.label}</option>`).join('')}
-        </select></td>
+        <td style="font-weight:600">₸${fmtN(sum)}</td>
+        <td>
+          <select class="manual-map" data-label="${label}" data-sum="${sum}"
+            style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text);font-size:12px;width:100%">
+            <option value="">— выбрать —</option>
+            <option value="__income__">▲ Доход (выручка)</option>
+            <option value="__skip__">✕ Пропустить</option>
+            ${FIELD_MAP.map(f => `<option value="${f.id}">▼ ${f.label}</option>`).join('')}
+          </select>
+        </td>
       </tr>`;
     }
     html += `</tbody></table>`;
@@ -442,25 +514,30 @@ function renderPreview(result, filename) {
 
   document.getElementById('uploadPreview').innerHTML = html;
   document.getElementById('uploadFileName').textContent = filename;
+  const recog = incomeRows.length + expenseRows.length;
   document.getElementById('uploadHint').textContent =
-    `Автоматически распознано: ${Object.keys(allCounterpart).length} строк · Нераспознано: ${Object.keys(allUnmatched).length}`;
+    `Распознано: ${recog} · Требуют маппинга: ${Object.keys(allUnmatched).length}`;
   document.getElementById('uploadHint').style.color = '';
   document.getElementById('uploadZone').classList.add('hidden');
   document.getElementById('uploadResult').classList.remove('hidden');
 
-  // Ручной маппинг нераспознанных
+  // Ручной маппинг
   document.querySelectorAll('.manual-map').forEach(sel => {
     sel.addEventListener('change', () => {
       const fieldId = sel.value;
       const sum     = parseFloat(sel.dataset.sum);
-      const label   = sel.dataset.label;
-      if (fieldId && sum) {
+      if (!fieldId || fieldId === '__skip__') { sel.closest('tr').style.opacity = '.4'; return; }
+      if (fieldId === '__income__') {
+        // добавляем к выручке — обновим поле f-price * f-volume позже через итог
+        parsedData['__income__'] = (parsedData['__income__'] || 0) + sum;
+      } else {
         parsedData[fieldId] = (parsedData[fieldId] || 0) + sum;
-        sel.closest('tr').style.opacity = '.5';
-        sel.disabled = true;
-        document.getElementById('uploadHint').textContent = `Добавлено вручную: ${label} → ${FIELD_MAP.find(f=>f.id===fieldId)?.label}`;
-        document.getElementById('uploadHint').style.color = 'var(--green)';
       }
+      sel.closest('tr').style.opacity = '.45';
+      sel.disabled = true;
+      const lbl = fieldId === '__income__' ? 'Доход' : FIELD_MAP.find(f => f.id === fieldId)?.label;
+      document.getElementById('uploadHint').textContent = `Добавлено: ${sel.dataset.label} → ${lbl}`;
+      document.getElementById('uploadHint').style.color = 'var(--green)';
     });
   });
 }
@@ -543,10 +620,20 @@ document.getElementById('clearFileBtn').addEventListener('click', () => {
 
 document.getElementById('applyDataBtn').addEventListener('click', () => {
   let count = 0;
+
   for (const [fieldId, value] of Object.entries(parsedData)) {
+    if (fieldId === '__income__') {
+      // Доход вручную назначенный: складываем в контрактные поставки
+      const el = document.getElementById('f-contracts');
+      if (el) { el.value = Math.round((parseFloat(el.value) || 0) + value); count++; }
+      continue;
+    }
     const el = document.getElementById(fieldId);
     if (el) { el.value = Math.round(value); count++; }
   }
+
+  // Если есть суммарный доход от Лайнс Джамп/АГО — подставляем как выручку
+  // через f-price × f-volume (если объём не задан — ставим сумму в f-contracts)
   document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
   const hint = document.getElementById('uploadHint');
   hint.textContent = `✓ Заполнено полей: ${count}. Проверьте данные и нажмите «Рассчитать».`;
