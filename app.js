@@ -1,4 +1,4 @@
-// Navigation
+// ─── Navigation ──────────────────────────────────────────────────────────────
 document.querySelectorAll('.nav-item').forEach(link => {
   link.addEventListener('click', e => {
     e.preventDefault();
@@ -10,148 +10,97 @@ document.querySelectorAll('.nav-item').forEach(link => {
   });
 });
 
-// Chart defaults
+// ─── Charts ───────────────────────────────────────────────────────────────────
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.borderColor = '#2a3348';
 Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
 Chart.defaults.font.size = 12;
 
-// Data: last 5 months (Feb–Jun 2026)
 const months = ['Февраль', 'Март', 'Апрель', 'Май', 'Июнь'];
-const revenues  = [69000000, 72000000, 75000000, 79200000, 82500000];
-const expenses  = [49700000, 52200000, 54800000  , 57800000, 59400000];
-const profits   = revenues.map((r, i) => r - expenses[i]);
+const revenues = [69000000, 72000000, 75000000, 79200000, 82500000];
+const expenses = [49700000, 52200000, 54800000, 57800000, 59400000];
+const profits  = revenues.map((r, i) => r - expenses[i]);
 
-// Trend chart
 new Chart(document.getElementById('trendChart'), {
   type: 'line',
   data: {
     labels: months,
     datasets: [
-      {
-        label: 'Выручка',
-        data: revenues,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.07)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-      },
-      {
-        label: 'Расходы',
-        data: expenses,
-        borderColor: '#ef4444',
-        backgroundColor: 'rgba(239,68,68,0.06)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-      },
-      {
-        label: 'Чистая прибыль',
-        data: profits,
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34,197,94,0.06)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-      },
+      { label: 'Выручка',       data: revenues, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.07)', tension: 0.4, fill: true, pointRadius: 4 },
+      { label: 'Расходы',       data: expenses, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)',  tension: 0.4, fill: true, pointRadius: 4 },
+      { label: 'Чистая прибыль',data: profits,  borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.06)', tension: 0.4, fill: true, pointRadius: 4 },
     ],
   },
   options: {
     responsive: true,
     plugins: { legend: { position: 'top' } },
-    scales: {
-      y: { ticks: { callback: v => '₸' + (v / 1000000).toFixed(0) + 'М' } },
-    },
+    scales: { y: { ticks: { callback: v => '₸' + (v/1000000).toFixed(0) + 'М' } } },
   },
 });
 
-// Pie — expense structure (current: Titan 38%)
-const expenseLabels = ['Титан', 'ФОТ', 'Ремонт', 'Логистика', 'Аренда', 'Страхование', 'Командировки', 'Административные'];
-const expenseData   = [22600000, 12000000, 8000000, 7000000, 4000000, 2000000, 2000000, 1800000];
-const totalExpenses = expenseData.reduce((a, b) => a + b, 0); // 59 400 000
+const expenseLabels = ['Титан','ФОТ','Ремонт','Логистика','Аренда','Страхование','Командировки','Административные'];
+const expenseData   = [22600000,12000000,8000000,7000000,4000000,2000000,2000000,1800000];
+const totalExp = expenseData.reduce((a,b) => a+b, 0);
 
 new Chart(document.getElementById('expenseChart'), {
   type: 'doughnut',
   data: {
     labels: expenseLabels,
-    datasets: [{
-      data: expenseData,
-      backgroundColor: ['#ef4444','#3b82f6','#f59e0b','#a78bfa','#34d399','#60a5fa','#fbbf24','#94a3b8'],
-      borderWidth: 2,
-      borderColor: '#161b27',
-    }],
+    datasets: [{ data: expenseData, backgroundColor: ['#ef4444','#3b82f6','#f59e0b','#a78bfa','#34d399','#60a5fa','#fbbf24','#94a3b8'], borderWidth: 2, borderColor: '#161b27' }],
   },
   options: {
     responsive: true,
     plugins: {
       legend: { position: 'bottom', labels: { boxWidth: 11, font: { size: 11 } } },
-      tooltip: {
-        callbacks: {
-          label: ctx => {
-            const pct = ((ctx.parsed / totalExpenses) * 100).toFixed(1);
-            return ` ₸${(ctx.parsed / 1000000).toFixed(1)}М (${pct}%)`;
-          },
-        },
-      },
+      tooltip: { callbacks: { label: ctx => ` ₸${(ctx.parsed/1000000).toFixed(1)}М (${((ctx.parsed/totalExp)*100).toFixed(1)}%)` } },
     },
   },
 });
 
-// Horizontal bar
 new Chart(document.getElementById('barChart'), {
   type: 'bar',
   data: {
     labels: expenseLabels,
-    datasets: [{
-      label: '₸',
-      data: expenseData,
-      backgroundColor: expenseData.map((_, i) => i === 0 ? 'rgba(239,68,68,0.7)' : 'rgba(59,130,246,0.6)'),
-      borderRadius: 4,
-    }],
+    datasets: [{ label: '₸', data: expenseData, backgroundColor: expenseData.map((_,i) => i===0?'rgba(239,68,68,0.7)':'rgba(59,130,246,0.6)'), borderRadius: 4 }],
   },
   options: {
     indexAxis: 'y',
     responsive: true,
     plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { callback: v => '₸' + (v / 1000000).toFixed(0) + 'М' } },
-    },
+    scales: { x: { ticks: { callback: v => '₸'+(v/1000000).toFixed(0)+'М' } } },
   },
 });
 
-// Report calculator
+// ─── Report calculator ────────────────────────────────────────────────────────
 document.getElementById('calcBtn').addEventListener('click', () => {
-  const volume   = parseFloat(document.getElementById('f-volume').value)    || 1000;
-  const price    = parseFloat(document.getElementById('f-price').value)     || 82500;
-  const contracts= parseFloat(document.getElementById('f-contracts').value) || 0;
-  const penalties= parseFloat(document.getElementById('f-penalties').value) || 0;
-  const rentInc  = parseFloat(document.getElementById('f-rent-income').value)|| 0;
+  const volume    = parseFloat(document.getElementById('f-volume').value)     || 1000;
+  const price     = parseFloat(document.getElementById('f-price').value)      || 82500;
+  const contracts = parseFloat(document.getElementById('f-contracts').value)  || 0;
+  const penalties = parseFloat(document.getElementById('f-penalties').value)  || 0;
+  const rentInc   = parseFloat(document.getElementById('f-rent-income').value)|| 0;
+  const titan     = parseFloat(document.getElementById('f-titan').value)      || 22600000;
+  const payroll   = parseFloat(document.getElementById('f-payroll').value)    || 12000000;
+  const rent      = parseFloat(document.getElementById('f-rent').value)       || 4000000;
+  const insurance = parseFloat(document.getElementById('f-insurance').value)  || 2000000;
+  const repair    = parseFloat(document.getElementById('f-repair').value)     || 8000000;
+  const logistics = parseFloat(document.getElementById('f-logistics').value)  || 7000000;
+  const travel    = parseFloat(document.getElementById('f-travel').value)     || 2000000;
+  const admin     = parseFloat(document.getElementById('f-admin').value)      || 1800000;
 
-  const titan    = parseFloat(document.getElementById('f-titan').value)     || 22600000;
-  const payroll  = parseFloat(document.getElementById('f-payroll').value)   || 12000000;
-  const rent     = parseFloat(document.getElementById('f-rent').value)      || 4000000;
-  const insurance= parseFloat(document.getElementById('f-insurance').value) || 2000000;
-  const repair   = parseFloat(document.getElementById('f-repair').value)    || 8000000;
-  const logistics= parseFloat(document.getElementById('f-logistics').value) || 7000000;
-  const travel   = parseFloat(document.getElementById('f-travel').value)    || 2000000;
-  const admin    = parseFloat(document.getElementById('f-admin').value)     || 1800000;
-
-  const revenue  = volume * price + contracts + penalties + rentInc;
-  const expenses = titan + payroll + rent + insurance + repair + logistics + travel + admin;
-  const profit   = revenue - expenses;
-  const ebitda   = (profit / revenue * 100).toFixed(1);
-  const costTon  = (expenses / volume).toFixed(0);
-  const expRatio = (expenses / revenue * 100).toFixed(1);
-  const titanPct = (titan / expenses * 100).toFixed(1);
+  const revenue  = volume*price + contracts + penalties + rentInc;
+  const exps     = titan + payroll + rent + insurance + repair + logistics + travel + admin;
+  const profit   = revenue - exps;
+  const ebitda   = (profit/revenue*100).toFixed(1);
+  const costTon  = (exps/volume).toFixed(0);
+  const expRatio = (exps/revenue*100).toFixed(1);
+  const titanPct = (titan/exps*100).toFixed(1);
 
   const fmt = n => '₸' + Math.round(n).toLocaleString('ru-RU');
-
   const checks = [
-    { ok: parseFloat(ebitda) >= 35,   text: `EBITDA margin: ${ebitda}% (цель ≥35%)` },
-    { ok: parseFloat(costTon) <= 55000,text: `Себестоимость: ₸${costTon}/т (цель ≤₸55 000)` },
-    { ok: parseFloat(expRatio) <= 65,  text: `Коэфф. расходов: ${expRatio}% (норма ≤65%)` },
-    { ok: parseFloat(titanPct) <= 30,  text: `Доля Титан: ${titanPct}% (норма ≤30%)` },
+    { ok: parseFloat(ebitda)   >= 35,    text: `EBITDA margin: ${ebitda}% (цель ≥35%)` },
+    { ok: parseFloat(costTon)  <= 55000, text: `Себестоимость: ₸${costTon}/т (цель ≤₸55 000)` },
+    { ok: parseFloat(expRatio) <= 65,    text: `Коэфф. расходов: ${expRatio}% (норма ≤65%)` },
+    { ok: parseFloat(titanPct) <= 30,    text: `Доля Титан: ${titanPct}% (норма ≤30%)` },
   ];
 
   const el = document.getElementById('reportResult');
@@ -160,13 +109,14 @@ document.getElementById('calcBtn').addEventListener('click', () => {
     <div style="font-size:15px;font-weight:700;margin-bottom:14px">Результаты периода</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
       <div><span style="color:var(--text2)">Выручка:</span> <strong>${fmt(revenue)}</strong></div>
-      <div><span style="color:var(--text2)">Расходы:</span> <strong>${fmt(expenses)}</strong></div>
+      <div><span style="color:var(--text2)">Расходы:</span> <strong>${fmt(exps)}</strong></div>
       <div><span style="color:var(--text2)">Чистая прибыль:</span> <strong style="color:${profit>0?'var(--green)':'var(--red)'}">${fmt(profit)}</strong></div>
       <div><span style="color:var(--text2)">Объём добычи:</span> <strong>${volume} т</strong></div>
     </div>
     <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Аудит показателей</div>
     ${checks.map(c => `
-      <div style="padding:8px 12px;margin-bottom:6px;border-radius:6px;background:${c.ok?'rgba(34,197,94,.08)':'rgba(239,68,68,.08)'};
+      <div style="padding:8px 12px;margin-bottom:6px;border-radius:6px;
+        background:${c.ok?'rgba(34,197,94,.08)':'rgba(239,68,68,.08)'};
         border-left:3px solid ${c.ok?'var(--green)':'var(--red)'};font-size:13px">
         <span style="color:${c.ok?'var(--green)':'var(--red)'};font-weight:700">${c.ok?'✓ ОК':'✗ КРИТИЧНО'}</span>
         &nbsp;—&nbsp;${c.text}
@@ -174,7 +124,7 @@ document.getElementById('calcBtn').addEventListener('click', () => {
   `;
 });
 
-// KPI form
+// ─── KPI form ─────────────────────────────────────────────────────────────────
 document.getElementById('kpiBtn').addEventListener('click', () => {
   const production = document.getElementById('kpi-production').value || '—';
   const revenue    = document.getElementById('kpi-revenue').value;
@@ -183,330 +133,339 @@ document.getElementById('kpiBtn').addEventListener('click', () => {
   const logistFact = document.getElementById('kpi-logist-fact').value;
   const logistPlan = document.getElementById('kpi-logist-plan').value;
   const balance    = document.getElementById('kpi-balance').value;
-
-  const fmt = n => n ? '₸' + (parseFloat(n) / 1000000).toFixed(1) + 'М' : '—';
-  const titanOk  = parseFloat(titanFact)  <= parseFloat(titanPlan);
-  const logistOk = parseFloat(logistFact) <= parseFloat(logistPlan);
-
-  const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const fmt = n => n ? '₸'+(parseFloat(n)/1000000).toFixed(1)+'М' : '—';
+  const today = new Date().toLocaleDateString('ru-RU', { day:'numeric', month:'short' });
   const row = document.createElement('tr');
   row.innerHTML = `
-    <td>${today}</td>
-    <td>${production}</td>
-    <td>${fmt(revenue)}</td>
-    <td class="${titanOk ? 'ok' : 'warn'}">${fmt(titanFact)} / ${fmt(titanPlan)}</td>
-    <td class="${logistOk ? 'ok' : 'warn'}">${fmt(logistFact)} / ${fmt(logistPlan)}</td>
-    <td>${fmt(balance)}</td>
-  `;
+    <td>${today}</td><td>${production}</td><td>${fmt(revenue)}</td>
+    <td class="${parseFloat(titanFact)<=parseFloat(titanPlan)?'ok':'warn'}">${fmt(titanFact)} / ${fmt(titanPlan)}</td>
+    <td class="${parseFloat(logistFact)<=parseFloat(logistPlan)?'ok':'warn'}">${fmt(logistFact)} / ${fmt(logistPlan)}</td>
+    <td>${fmt(balance)}</td>`;
   document.getElementById('kpiBody').prepend(row);
-
   ['kpi-production','kpi-revenue','kpi-titan-fact','kpi-titan-plan','kpi-logist-fact','kpi-logist-plan','kpi-balance']
     .forEach(id => { document.getElementById(id).value = ''; });
 });
 
-// ─── FILE UPLOAD ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILE UPLOAD — специфичный парсер для cash flow формата СБК/Титан
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Правила маппинга: ключевые слова → id поля формы
+// Внутригрупповые переводы — пропускаем
+const INTERNAL_KEYS = ['займ','возврат предоплат','возврат займ','движения связанных','кредит форте','погашение кредита','форте кредит'];
+const INTERNAL_CP   = ['сбк','лд','absolute','абсолют','агро','аго','авантаж','шыгыс мунай','форте'];
+
+// Служебные строки
+const SKIP_LABELS = ['остаток','итого','поступление','выбытие','дата','контрагент','назначение','сумма','народный','евразийск','рбк','бцк','свободные','банк'];
+
+// Prefix назначения → категория расходов
+const PURPOSE_PREFIX = {
+  'мр ':  'f-repair',    // материальные расходы
+  'нт ':  'f-repair',    // нефтепромысловые
+  'трт ': 'f-logistics', // транспорт
+  'ауп ': 'f-admin',     // административные
+};
+
+// Маппинг контрагент+назначение → поле формы
 const FIELD_MAP = [
-  { id: 'f-volume',      label: 'Объём добычи (тонны)',            keys: ['объём добычи','добыча','volume','тонны','тонн','нефть добыч'] },
-  { id: 'f-price',       label: 'Цена нефти (₸/тонна)',            keys: ['цена нефти','цена реализ','price','спот','стоимость нефти'] },
-  { id: 'f-contracts',   label: 'Контрактные поставки',            keys: ['контрактные поставки','контракт','долгосрочн'] },
-  { id: 'f-penalties',   label: 'Штрафные санкции',                keys: ['штраф','неустойка','penalties','санкц'] },
-  { id: 'f-rent-income', label: 'Аренда оборудования (доход)',     keys: ['аренда оборудован','сдача в аренду','аренда актив','доход аренд'] },
-  { id: 'f-titan',       label: 'Буровая компания Титан',          keys: ['титан','titan','буровая','тоо тит','тоо «тит','ооо тит','drilling','тоо "титан','ип титан'] },
-  { id: 'f-payroll',     label: 'ФОТ и налоги',                   keys: ['фот','зарплат','salary','payroll','оплата труд','налог с зарп','соц отч','пенсионн','инпн','ипн','фонд оплат','лд','физ лицо','физическое лицо','соцналог','корпоративн налог','кпн','ндфл'] },
-  { id: 'f-rent',        label: 'Аренда офиса / инфраструктура',   keys: ['аренда офис','аренда помещ','аренда склад','коммунал','электр','газ','вода','инфраструктур'] },
-  { id: 'f-insurance',   label: 'Страхование',                     keys: ['страхован','insurance','страховка','полис'] },
-  { id: 'f-repair',      label: 'Ремонт и эксплуатация',           keys: ['ремонт','эксплуатац','тех обслуж','запчаст','зип','техническ обслуж','repair','maintenance','сервис'] },
-  { id: 'f-logistics',   label: 'Логистика и транспорт',           keys: ['логистик','транспорт','перевозк','доставк','freight','logistics','тоо aktobe','aktobe gruup','it-cube','ит куб'] },
-  { id: 'f-travel',      label: 'Командировочные',                 keys: ['командиров','суточные','travel','билет','гостиниц','проезд'] },
-  { id: 'f-admin',       label: 'Административные расходы',        keys: ['администрат','хозяйствен','офисн','канцел','связь','интернет','почта','банковск','комисс','расчётно-кассов','рко','налог на имущ','зем налог','нds','ндс','налог','сбор'] },
+  // ── ДОХОДЫ ──
+  { id: '__oil__',    label: '🛢 Выручка от нефти',     income: true, keys: ['за нефть','нефть ','реализац нефт','анп ','анп\n','лайнс джамп','lines jump'] },
+  { id: 'f-rent-income', label: '🔧 Аренда техники (доход)', income: true, keys: ['аренда техники'] },
+  { id: 'f-penalties',   label: '📋 Прочие доходы',         income: true, keys: ['возмещение штрафа','возмещение расходов','за снегоуборочн','возврат по запчаст','за газ на а/м','concept возмещ'] },
+
+  // ── РАСХОДЫ — ФОТ ──
+  { id: 'f-payroll', label: '👷 Зарплата',  keys: ['зарплат','сотрудники','отпускные','оклад','амантаев','сандигалиев','хамитов','бакытбек'] },
+  { id: 'f-payroll', label: '🏛 Налоги с ФОТ', keys: ['ипн','соц.налог','соц.отч','мед.отч','пенс.отч','кпн','нао гкп','угд','инпн','налоги, пенс','налог за дб','отч за дб'] },
+
+  // ── РАСХОДЫ — ремонт ──
+  { id: 'f-repair', label: '🔩 Ремонт и запчасти', keys: [
+    'ремонт','запчаст','подшипник','редуктор','генератор','стартер','двигател','тнвд',
+    'фильтр','масл','антифриз','манжет','шестерн','цапф','пневмоусил','тормоз','аккумулят',
+    'ремень клин','набивка','сальник','электрод','перемотка','насос','погрузчик','лизинг',
+    'ремтехком','кама урал','корнеев','гайдарь','амандосов','тарлан','олжас',
+    'star master','евразиан маш','кастон','адал тау','ролова','кэлм','шебер',
+    'ремонт вагон','частотный прео','пожарн','tops safety','противофонтан','астр',
+    'насосы винт','ремонт генер','ремонт старт','ремонт редук','замена масла',
+    'противопожарн','зип','запчасти',
+  ]},
+
+  // ── РАСХОДЫ — топливо / логистика ──
+  { id: 'f-logistics', label: '🚛 Логистика и топливо', keys: [
+    'дизтопливо','бензин','азс ','азс\n','дт ','перевозк','доставк',
+    'вахт','гелиос','gs&ko','royal petrol','куценко','калмукашев',
+    'трекер','бесхлебнов','газ для газели','пропан','гсм',
+    'перевозка нефти','tas building',
+  ]},
+
+  // ── РАСХОДЫ — инфраструктура ──
+  { id: 'f-rent', label: '🏢 Аренда и инфраструктура', keys: [
+    'аренда офис','it-cube','аренда кварт','электроэнергия','энергосистема',
+    'вода в офисе','вывоз мусор','qazaqgaz','qazagaz','газ ауп','ауп газ',
+    'aqtobe-su','believe вода','neo plus','казахтелеком','дивизион',
+    'связь, интернет','ауп вода','ауп электр','охрана','бастион',
+  ]},
+
+  // ── РАСХОДЫ — страхование ──
+  { id: 'f-insurance', label: '🛡 Страхование', keys: ['страхован','каско','аманат','полис','ауп застрах'] },
+
+  // ── РАСХОДЫ — административные ──
+  { id: 'f-admin', label: '📎 Административные', keys: [
+    'комиссия банка','канцтовар','картридж','почта','нотариус','алем тат',
+    'ауп почта','жихаз','шолпан','заправка картр','обслуживание трекер',
+    'госпошлина','юр услуг','адвокат','суд','продукты питания','анвар','инком',
+    'кх жана','баня','питание','ауп фитнес','ауп масс','медикам','ауп продукт',
+    'ауп табурет','ауп канц','ауп вывоз','вывоз','сбор','роялти','абонплата',
+    'абон плата','обслуживание','ауп спирт','термометр','услуги такси',
+    'мойка а/м','мусор','возмещение','ремонт вагонч',
+  ]},
+
+  // ── РАСХОДЫ — командировочные ──
+  { id: 'f-travel', label: '✈ Командировочные', keys: [
+    'командир','суточн','билет','проезд сотруд','перелет','гостиниц','отрар',
+    'ауп расходы по суду','касенов','увайдолла','юр суд',
+  ]},
 ];
 
-// Категории доходов для автоматического распознавания
-const INCOME_KEYS = [
-  'выручка','реализац','продажа нефти','доход от реализ','поступлен','revenue','income','приход','зачислен',
-  'лайнс джамп','lines jump','lines-jump','linesjump','лайнсджамп',   // Лайнс Джамп — основной источник дохода
-  'аго',                                                                // АГО — получает прибыль от Лайнс Джамп
-];
-
-// Идентификаторы собственного счёта (игнорируем как внутренние переводы)
-const OWN_ACCOUNT_KEYS = ['сбк','сбс','sbk','sbs'];
-
-function matchField(text) {
-  const t = String(text).toLowerCase().trim();
-  for (const f of FIELD_MAP) {
-    if (f.keys.some(kw => t.includes(kw))) return f;
-  }
-  return null;
-}
-
-function isIncomeRow(text) {
-  const t = String(text).toLowerCase();
-  return INCOME_KEYS.some(k => t.includes(k));
-}
+// Поля, которые считаются "личными" расходами (не бизнес) — помечаем но не скрываем
+const PERSONAL_KEYS = ['обучение детей','зем.участок','земельный','квартира','фитнес','массажное кресло','прадо','каско прадо','болсын к'];
 
 function cleanNum(val) {
-  if (val === null || val === undefined || val === '' || val === '—' || val === '-') return null;
-  const s = String(val).replace(/\s/g, '').replace(',', '.').replace(/[^\d.\-]/g, '');
+  if (!val && val !== 0) return null;
+  const s = String(val).replace(/\s/g,'').replace(',','.').replace(/[^\d.\-]/g,'');
   const n = parseFloat(s);
   return isNaN(n) || n === 0 ? null : n;
 }
 
-// ── Умный анализ Excel: все листы, поиск числовых колонок ──────────────────
-
-function analyzeWorkbook(buffer) {
-  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const sheets = {};
-
-  wb.SheetNames.forEach(sheetName => {
-    const ws   = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    sheets[sheetName] = rows;
-  });
-
-  return sheets;
+function isInternal(cp, pur) {
+  const t = (cp+' '+pur).toLowerCase();
+  if (INTERNAL_KEYS.some(k => t.includes(k))) return true;
+  const cpLow = cp.toLowerCase().trim();
+  return INTERNAL_CP.some(k => cpLow === k || cpLow.startsWith(k+' '));
 }
 
-// Находит числовые колонки в листе и возвращает {colIndex, header}[]
-function findNumericCols(rows) {
-  if (rows.length < 2) return [];
-  const headerRow = rows.find(r => r.some(c => c !== '')) || rows[0];
-  const numCols = [];
-
-  for (let ci = 0; ci < headerRow.length; ci++) {
-    let numCount = 0;
-    for (let ri = 1; ri < Math.min(rows.length, 30); ri++) {
-      if (cleanNum(rows[ri][ci]) !== null) numCount++;
-    }
-    if (numCount >= 2) {
-      numCols.push({ colIndex: ci, header: String(headerRow[ci] || `Колонка ${ci+1}`) });
-    }
-  }
-  return numCols;
+function isSkip(label) {
+  const l = String(label).toLowerCase().trim();
+  if (!l || l==='.' || l==='-' || l==='итого') return true;
+  return SKIP_LABELS.some(s => l.startsWith(s));
 }
 
-// Находит текстовую колонку (наименование/контрагент)
-function findLabelCol(rows) {
-  if (rows.length < 2) return 0;
-  const headerRow = rows[0];
-  // Ищем колонку с заголовком "наименование", "контрагент", "статья" и т.д.
-  const labelKeys = ['наименован','контрагент','статья','описан','назначен','получател','плательщ','name','description'];
-  for (let ci = 0; ci < headerRow.length; ci++) {
-    const h = String(headerRow[ci]).toLowerCase();
-    if (labelKeys.some(k => h.includes(k))) return ci;
-  }
-  // Fallback: первая колонка с текстом
-  for (let ci = 0; ci < headerRow.length; ci++) {
-    let textCount = 0;
-    for (let ri = 1; ri < Math.min(rows.length, 20); ri++) {
-      const v = rows[ri][ci];
-      if (v && isNaN(parseFloat(String(v).replace(/\s/g,'')))) textCount++;
-    }
-    if (textCount >= 3) return ci;
-  }
-  return 0;
+function isPersonal(cp, pur) {
+  const t = (cp+' '+pur).toLowerCase();
+  return PERSONAL_KEYS.some(k => t.includes(k));
 }
 
-function isOwnAccount(text) {
-  const t = String(text).toLowerCase().trim();
-  return OWN_ACCOUNT_KEYS.some(k => t.includes(k));
-}
+function matchField(cp, pur) {
+  const cpL  = cp.toLowerCase();
+  const purL = pur.toLowerCase().trim();
+  const full = cpL + ' ' + purL;
 
-// Суммирует транзакции по маппингу
-function aggregateSheet(rows, labelCol, amountCol) {
-  const totals = {};         // fieldId → sum
-  const byCounterparty = {}; // label → {fieldId, sum, count, type}
-  const unmatched = {};      // label → sum
-  const incomeLines = {};    // label → sum (доходы по контрагентам)
-  let totalIncome = 0;
-
-  for (let ri = 1; ri < rows.length; ri++) {
-    const row   = rows[ri];
-    // Берём все текстовые ячейки строки для поиска метки (шире, чем одна колонка)
-    const label = String(row[labelCol] || '').trim();
-    if (!label) continue;
-
-    const num = cleanNum(row[amountCol]);
-    if (num === null || num <= 0) continue;
-
-    // Собственный счёт — пропускаем (внутренний перевод)
-    if (isOwnAccount(label)) continue;
-
-    // Лайнс Джамп / АГО / прочие доходы
-    if (isIncomeRow(label)) {
-      totalIncome += num;
-      incomeLines[label] = (incomeLines[label] || 0) + num;
-      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: '__income__', fieldLabel: 'Доход (выручка)', sum: 0, count: 0, type: 'income' };
-      byCounterparty[label].sum   += num;
-      byCounterparty[label].count += 1;
-      continue;
-    }
-
-    // Расходы — автоматический маппинг
-    const match = matchField(label);
-    if (match) {
-      totals[match.id] = (totals[match.id] || 0) + num;
-      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: match.id, fieldLabel: match.label, sum: 0, count: 0, type: 'expense' };
-      byCounterparty[label].sum   += num;
-      byCounterparty[label].count += 1;
-    } else {
-      unmatched[label] = (unmatched[label] || 0) + num;
+  // 1) prefix назначения
+  for (const [prefix, fid] of Object.entries(PURPOSE_PREFIX)) {
+    if (purL.startsWith(prefix)) {
+      // уточнение: топливо → логистика даже если prefix = мр/нт
+      if ((fid==='f-repair'||fid==='f-admin') && (purL.includes('бензин')||purL.includes('дизт')||purL.includes(' дт ')||purL.includes('пропан')||purL.includes('гсм'))) {
+        return FIELD_MAP.find(f=>f.id==='f-logistics');
+      }
+      const f = FIELD_MAP.find(f=>f.id===fid && !f.income);
+      if (f) return f;
     }
   }
 
-  return { totals, byCounterparty, unmatched, totalIncome, incomeLines };
+  // 2) ключевые слова
+  for (const f of FIELD_MAP) {
+    if (f.keys.some(k => full.includes(k))) return f;
+  }
+  return null;
 }
 
-// Основная функция разбора всех листов
+// ── Главная функция разбора workbook ──────────────────────────────────────────
 function processWorkbook(sheets) {
-  const allTotals      = {};
-  const allCounterpart = {};
-  const allUnmatched   = {};
-  let   grandIncome    = 0;
-  const sheetSummaries = [];
+  const totals    = {};   // fieldId → sum
+  const byLine    = {};   // lineKey → {fieldId, label, sum, count, type, sheet, cp, pur}
+  const unmatched = {};   // lineKey → {sum, count, sheet, cp, pur, side}
+  const personal  = {};   // lineKey → {sum, cp, pur, sheet}
+  let oilRevenue  = 0;
+  let otherIncome = 0;
+  let skipped     = 0;
+  const summary   = [];
 
   for (const [sheetName, rows] of Object.entries(sheets)) {
-    if (rows.length < 2) continue;
+    let shIn = 0, shEx = 0, shSkip = 0;
 
-    const labelCol   = findLabelCol(rows);
-    const numCols    = findNumericCols(rows);
-    if (numCols.length === 0) continue;
+    for (const row of rows) {
+      // ── Доходная сторона (cols 1,2,3) ──
+      const cpIn  = String(row[1]||'').trim();
+      const purIn = String(row[2]||'').trim();
+      const amIn  = cleanNum(row[3]);
 
-    // Берём колонку с наибольшей суммой (скорее всего — сумма транзакции)
-    let bestCol = numCols[0];
-    let bestSum = 0;
-    for (const nc of numCols) {
-      let s = 0;
-      for (let ri = 1; ri < rows.length; ri++) { const n = cleanNum(rows[ri][nc.colIndex]); if (n && n > 0) s += n; }
-      if (s > bestSum) { bestSum = s; bestCol = nc; }
+      if (cpIn && amIn && !isSkip(cpIn) && !isSkip(purIn)) {
+        if (isInternal(cpIn, purIn)) { skipped++; shSkip++; }
+        else {
+          const m = matchField(cpIn, purIn);
+          const key = cpIn + ' | ' + purIn;
+          if (m && m.income) {
+            totals[m.id] = (totals[m.id]||0) + amIn;
+            if (m.id==='__oil__') oilRevenue += amIn; else otherIncome += amIn;
+            shIn += amIn;
+            if (!byLine[key]) byLine[key] = { fieldId:m.id, label:m.label, sum:0, count:0, type:'income', sheet:sheetName, cp:cpIn, pur:purIn };
+            byLine[key].sum += amIn; byLine[key].count++;
+          } else {
+            if (!unmatched[key]) unmatched[key] = { sum:0, count:0, sheet:sheetName, cp:cpIn, pur:purIn, side:'income' };
+            unmatched[key].sum += amIn; unmatched[key].count++;
+          }
+        }
+      }
+
+      // ── Расходная сторона (cols 5,6,7) ──
+      const cpEx  = String(row[5]||'').trim();
+      const purEx = String(row[6]||'').trim();
+      const amEx  = cleanNum(row[7]);
+      const labelEx = cpEx || purEx;
+
+      if (labelEx && amEx && !isSkip(labelEx)) {
+        if (isInternal(cpEx, purEx)) { skipped++; shSkip++; }
+        else if (isPersonal(cpEx, purEx)) {
+          const key = cpEx+'|'+purEx;
+          if (!personal[key]) personal[key] = { sum:0, cp:cpEx, pur:purEx, sheet:sheetName };
+          personal[key].sum += amEx;
+        } else {
+          const m = matchField(cpEx, purEx);
+          const key = cpEx + ' | ' + purEx;
+          if (m && !m.income) {
+            totals[m.id] = (totals[m.id]||0) + amEx;
+            shEx += amEx;
+            if (!byLine[key]) byLine[key] = { fieldId:m.id, label:m.label, sum:0, count:0, type:'expense', sheet:sheetName, cp:cpEx, pur:purEx };
+            byLine[key].sum += amEx; byLine[key].count++;
+          } else {
+            if (!unmatched[key]) unmatched[key] = { sum:0, count:0, sheet:sheetName, cp:cpEx, pur:purEx, side:'expense' };
+            unmatched[key].sum += amEx; unmatched[key].count++;
+          }
+        }
+      }
     }
 
-    const { totals, byCounterparty, unmatched, totalIncome } = aggregateSheet(rows, labelCol, bestCol.colIndex);
-
-    sheetSummaries.push({ sheetName, rowCount: rows.length - 1, amountCol: bestCol.header, totalIncome, totals, byCounterparty, unmatched });
-    grandIncome += totalIncome;
-    for (const [k, v] of Object.entries(totals))       allTotals[k] = (allTotals[k] || 0) + v;
-    for (const [k, v] of Object.entries(byCounterparty)) {
-      if (!allCounterpart[k]) allCounterpart[k] = { ...v };
-      else { allCounterpart[k].sum += v.sum; allCounterpart[k].count += v.count; }
-    }
-    for (const [k, v] of Object.entries(unmatched))    allUnmatched[k] = (allUnmatched[k] || 0) + v;
+    if (shIn+shEx > 0) summary.push({ sheetName, income:shIn, expense:shEx, skipped:shSkip });
   }
 
-  return { allTotals, allCounterpart, allUnmatched, grandIncome, sheetSummaries };
+  return { totals, byLine, unmatched, personal, oilRevenue, otherIncome,
+           grandIncome: oilRevenue+otherIncome, skipped, summary };
 }
 
-// ── Простой парсер CSV/TXT/JSON (оставляем) ──────────────────────────────
-
-function parseTextRows(text, ext) {
-  if (ext === 'json') {
-    try {
-      const obj = JSON.parse(text);
-      if (Array.isArray(obj)) return obj.map(item => [Object.values(item)[0], Object.values(item)[1]]);
-      return Object.entries(obj);
-    } catch { return []; }
-  }
-  const sep = ext === 'csv' ? /[;,]/ : /[\t:—–]/;
-  return text.trim().split(/\r?\n/).map(line => {
-    const parts = line.split(sep).map(p => p.trim().replace(/^["']|["']$/g, ''));
-    return parts.length >= 2 ? [parts[0], parts[1]] : null;
-  }).filter(Boolean);
-}
-
-// ── Рендер превью ─────────────────────────────────────────────────────────
-
+// ── Рендер превью ─────────────────────────────────────────────────────────────
 let parsedData = {};
 
+function fmtN(n) { return n.toLocaleString('ru-RU', { maximumFractionDigits: 0 }); }
+function fmtM(n) { return '₸' + (n/1000000).toFixed(2) + 'М'; }
+
 function renderPreview(result, filename) {
-  const { allTotals, allCounterpart, allUnmatched, grandIncome, sheetSummaries } = result;
-  parsedData = { ...allTotals };
+  const { totals, byLine, unmatched, personal, oilRevenue, otherIncome, grandIncome, skipped, summary } = result;
+  parsedData = {};
 
-  const fmtN = n => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+  // Переносим в parsedData только реальные поля формы
+  for (const [fid, val] of Object.entries(totals)) {
+    if (fid !== '__oil__' && fid !== '__other_income__' && document.getElementById(fid)) {
+      parsedData[fid] = val;
+    }
+  }
+  // Нефтяная выручка → f-contracts (сумма продажи нефти)
+  if (totals['__oil__']) parsedData['f-contracts'] = totals['__oil__'];
 
-  // Считаем итоги расходов
-  const totalExpenses = Object.values(allTotals).reduce((a, b) => a + b, 0);
-  const profit = grandIncome - totalExpenses;
-
-  // Разделяем доходные и расходные строки
-  const incomeRows  = Object.entries(allCounterpart).filter(([, v]) => v.type === 'income');
-  const expenseRows = Object.entries(allCounterpart).filter(([, v]) => v.type === 'expense');
+  const totalExpenses = Object.entries(totals)
+    .filter(([k]) => !k.startsWith('__'))
+    .reduce((s,[,v]) => s+v, 0);
 
   let html = '';
 
   // ── Итоговая сводка ──
-  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-    <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:12px;text-align:center">
-      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Доходы (Лайнс Джамп / АГО)</div>
-      <div style="font-size:16px;font-weight:700;color:var(--green)">₸${fmtN(grandIncome)}</div>
+  html += `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">🛢 Выручка от нефти</div>
+      <div style="font-size:18px;font-weight:700;color:var(--green)">₸${fmtN(oilRevenue)}</div>
     </div>
-    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;text-align:center">
-      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Расходы (итого)</div>
-      <div style="font-size:16px;font-weight:700;color:var(--red)">₸${fmtN(totalExpenses)}</div>
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Расходы бизнеса</div>
+      <div style="font-size:18px;font-weight:700;color:var(--red)">₸${fmtN(totalExpenses)}</div>
     </div>
-    <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:12px;text-align:center">
-      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Чистая прибыль</div>
-      <div style="font-size:16px;font-weight:700;color:${profit>=0?'var(--green)':'var(--red)'}">₸${fmtN(profit)}</div>
+    <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Прибыль (чистая)</div>
+      <div style="font-size:18px;font-weight:700;color:${oilRevenue-totalExpenses>=0?'var(--green)':'var(--red)'}">₸${fmtN(oilRevenue+otherIncome-totalExpenses)}</div>
     </div>
+  </div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:14px">
+    Листов: <strong style="color:var(--text)">${summary.length}</strong> &nbsp;|&nbsp;
+    Пропущено внутренних: <strong style="color:var(--text)">${skipped}</strong> &nbsp;|&nbsp;
+    ${summary.map(s=>`<span style="color:var(--accent2)">${s.sheetName}</span>`).join(' · ')}
   </div>`;
 
-  // Листы
-  html += `<div style="font-size:11px;color:var(--text2);margin-bottom:12px">
-    Листов обработано: <strong style="color:var(--text)">${sheetSummaries.length}</strong>
-    &nbsp;(${sheetSummaries.map(s => s.sheetName).join(', ')})
-  </div>`;
-
-  // ── Доходы ──
-  if (incomeRows.length > 0) {
-    html += `<div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">▲ Доходы</div>`;
-    html += `<table><thead><tr><th>Контрагент</th><th>Лист</th><th>Транзакций</th><th>Сумма (₸)</th><th>Статус</th></tr></thead><tbody>`;
-    for (const [label, info] of incomeRows) {
-      const sheet = sheetSummaries.find(s => s.byCounterparty[label])?.sheetName || '—';
-      html += `<tr>
-        <td><strong>${label}</strong></td>
-        <td style="color:var(--text2);font-size:11px">${sheet}</td>
-        <td style="color:var(--text2)">${info.count}</td>
-        <td style="font-weight:700;color:var(--green)">₸${fmtN(info.sum)}</td>
-        <td class="mapped">✓ Доход</td>
-      </tr>`;
+  // ── Категории расходов (сводная таблица) ──
+  const catTotals = {};
+  for (const [key, info] of Object.entries(byLine)) {
+    if (info.type === 'expense') {
+      const cat = info.label;
+      catTotals[cat] = (catTotals[cat]||0) + info.sum;
+    }
+  }
+  if (Object.keys(catTotals).length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">▼ Расходы по категориям</div>`;
+    html += `<table><thead><tr><th>Категория</th><th style="text-align:right">Сумма (₸)</th><th style="text-align:right">%</th></tr></thead><tbody>`;
+    for (const [cat, sum] of Object.entries(catTotals).sort(([,a],[,b])=>b-a)) {
+      const pct = totalExpenses > 0 ? ((sum/totalExpenses)*100).toFixed(1) : '0';
+      html += `<tr><td>${cat}</td><td style="text-align:right;font-weight:600">${fmtN(sum)}</td><td style="text-align:right;color:var(--text2)">${pct}%</td></tr>`;
     }
     html += `</tbody></table>`;
   }
 
-  // ── Расходы — распознанные ──
-  if (expenseRows.length > 0) {
-    html += `<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">▼ Расходы — распознаны автоматически</div>`;
-    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Лист</th><th>Транзакций</th><th>Сумма (₸)</th><th>Категория</th></tr></thead><tbody>`;
-    for (const [label, info] of expenseRows) {
-      const sheet = sheetSummaries.find(s => s.byCounterparty[label])?.sheetName || '—';
-      html += `<tr>
-        <td>${label}</td>
-        <td style="color:var(--text2);font-size:11px">${sheet}</td>
-        <td style="color:var(--text2)">${info.count}</td>
-        <td style="font-weight:600">₸${fmtN(info.sum)}</td>
-        <td class="mapped">→ ${info.fieldLabel}</td>
-      </tr>`;
+  // ── Детализация транзакций ──
+  const incomeLines  = Object.entries(byLine).filter(([,v])=>v.type==='income');
+  const expenseLines = Object.entries(byLine).filter(([,v])=>v.type==='expense').sort(([,a],[,b])=>b.sum-a.sum);
+
+  if (incomeLines.length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">▲ Доходы</div>`;
+    html += `<table><thead><tr><th>Контрагент</th><th>Назначение</th><th>Лист</th><th style="text-align:right">Сумма</th></tr></thead><tbody>`;
+    for (const [, info] of incomeLines) {
+      html += `<tr><td><strong>${info.cp}</strong></td><td style="color:var(--text2);font-size:12px">${info.pur}</td><td style="color:var(--text2);font-size:11px">${info.sheet}</td><td style="text-align:right;font-weight:700;color:var(--green)">₸${fmtN(info.sum)}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  if (expenseLines.length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">▼ Расходы (детализация)</div>`;
+    html += `<table><thead><tr><th>Контрагент</th><th>Назначение</th><th>Категория</th><th style="text-align:right">Сумма</th></tr></thead><tbody>`;
+    for (const [, info] of expenseLines) {
+      html += `<tr><td>${info.cp}</td><td style="color:var(--text2);font-size:12px">${info.pur.substring(0,50)}</td><td class="mapped" style="font-size:11px">${info.label}</td><td style="text-align:right;font-weight:600">₸${fmtN(info.sum)}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  // ── Личные расходы (не включены в бизнес) ──
+  const personalEntries = Object.values(personal);
+  if (personalEntries.length > 0) {
+    const pTotal = personalEntries.reduce((s,v)=>s+v.sum,0);
+    html += `<div style="font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">⚠ Личные расходы (не включены) — ₸${fmtN(pTotal)}</div>`;
+    html += `<table><thead><tr><th>Контрагент</th><th>Назначение</th><th style="text-align:right">Сумма</th></tr></thead><tbody>`;
+    for (const p of personalEntries.sort((a,b)=>b.sum-a.sum)) {
+      html += `<tr><td>${p.cp}</td><td style="color:var(--text2);font-size:12px">${p.pur}</td><td style="text-align:right;color:var(--yellow);font-weight:600">₸${fmtN(p.sum)}</td></tr>`;
     }
     html += `</tbody></table>`;
   }
 
   // ── Нераспознанные — ручной маппинг ──
-  if (Object.keys(allUnmatched).length > 0) {
-    html += `<div style="font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">? Нераспознанные строки — выберите категорию</div>`;
-    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Сумма (₸)</th><th>Назначить категорию</th></tr></thead><tbody>`;
-    for (const [label, sum] of Object.entries(allUnmatched)) {
+  const unmatchedEntries = Object.entries(unmatched).sort(([,a],[,b])=>b.sum-a.sum);
+  if (unmatchedEntries.length > 0) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">? Нераспознанные — выберите категорию</div>`;
+    html += `<table><thead><tr><th>Контрагент</th><th>Назначение</th><th style="text-align:right">Сумма</th><th>Категория</th></tr></thead><tbody>`;
+    for (const [key, info] of unmatchedEntries) {
       html += `<tr>
-        <td>${label}</td>
-        <td style="font-weight:600">₸${fmtN(sum)}</td>
-        <td>
-          <select class="manual-map" data-label="${label}" data-sum="${sum}"
-            style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text);font-size:12px;width:100%">
-            <option value="">— выбрать —</option>
-            <option value="__income__">▲ Доход (выручка)</option>
-            <option value="__skip__">✕ Пропустить</option>
-            ${FIELD_MAP.map(f => `<option value="${f.id}">▼ ${f.label}</option>`).join('')}
-          </select>
-        </td>
+        <td>${info.cp}</td>
+        <td style="color:var(--text2);font-size:12px">${info.pur.substring(0,45)}</td>
+        <td style="text-align:right;font-weight:600">₸${fmtN(info.sum)}</td>
+        <td><select class="manual-map" data-key="${key}" data-sum="${info.sum}" data-side="${info.side}"
+          style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--text);font-size:11px;width:100%">
+          <option value="">— выбрать —</option>
+          <option value="__oil__">🛢 Выручка от нефти</option>
+          <option value="__skip__">✕ Пропустить</option>
+          ${FIELD_MAP.filter(f=>!f.income).map(f=>`<option value="${f.id}">${f.label}</option>`).join('')}
+        </select></td>
       </tr>`;
     }
     html += `</tbody></table>`;
@@ -514,62 +473,49 @@ function renderPreview(result, filename) {
 
   document.getElementById('uploadPreview').innerHTML = html;
   document.getElementById('uploadFileName').textContent = filename;
-  const recog = incomeRows.length + expenseRows.length;
+  const matched = Object.keys(byLine).length;
   document.getElementById('uploadHint').textContent =
-    `Распознано: ${recog} · Требуют маппинга: ${Object.keys(allUnmatched).length}`;
+    `Распознано: ${matched} транзакций · Нераспознано: ${unmatchedEntries.length} · Личных: ${personalEntries.length}`;
   document.getElementById('uploadHint').style.color = '';
   document.getElementById('uploadZone').classList.add('hidden');
   document.getElementById('uploadResult').classList.remove('hidden');
 
-  // Ручной маппинг
+  // Ручной маппинг нераспознанных
   document.querySelectorAll('.manual-map').forEach(sel => {
     sel.addEventListener('change', () => {
-      const fieldId = sel.value;
-      const sum     = parseFloat(sel.dataset.sum);
-      if (!fieldId || fieldId === '__skip__') { sel.closest('tr').style.opacity = '.4'; return; }
-      if (fieldId === '__income__') {
-        // добавляем к выручке — обновим поле f-price * f-volume позже через итог
-        parsedData['__income__'] = (parsedData['__income__'] || 0) + sum;
+      const fid = sel.value;
+      const sum = parseFloat(sel.dataset.sum);
+      if (!fid || fid === '__skip__') { sel.closest('tr').style.opacity='.4'; return; }
+      if (fid === '__oil__') {
+        parsedData['f-contracts'] = (parsedData['f-contracts']||0) + sum;
       } else {
-        parsedData[fieldId] = (parsedData[fieldId] || 0) + sum;
+        parsedData[fid] = (parsedData[fid]||0) + sum;
       }
       sel.closest('tr').style.opacity = '.45';
       sel.disabled = true;
-      const lbl = fieldId === '__income__' ? 'Доход' : FIELD_MAP.find(f => f.id === fieldId)?.label;
-      document.getElementById('uploadHint').textContent = `Добавлено: ${sel.dataset.label} → ${lbl}`;
-      document.getElementById('uploadHint').style.color = 'var(--green)';
     });
   });
 }
 
 function renderSimplePreview(rows, filename) {
   parsedData = {};
-  const fmtN = n => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
   let matched = 0;
   let html = `<table><thead><tr><th>Поле</th><th>Значение</th><th>Категория</th></tr></thead><tbody>`;
-
   rows.forEach(([key, val]) => {
-    const f   = matchField(String(key));
+    const f   = matchField(String(key), '');
     const num = cleanNum(val);
-    if (f && num !== null) {
-      parsedData[f.id] = (parsedData[f.id] || 0) + num;
-      matched++;
-      html += `<tr><td>${key}</td><td>${fmtN(num)}</td><td class="mapped">→ ${f.label}</td></tr>`;
-    } else {
-      html += `<tr><td>${key}</td><td>${val}</td><td class="unmapped">—</td></tr>`;
-    }
+    if (f && num) { parsedData[f.id] = (parsedData[f.id]||0)+num; matched++; html += `<tr><td>${key}</td><td>${fmtN(num)}</td><td class="mapped">${f.label}</td></tr>`; }
+    else          { html += `<tr><td>${key}</td><td>${val}</td><td class="unmapped">—</td></tr>`; }
   });
   html += `</tbody></table>`;
-
   document.getElementById('uploadPreview').innerHTML = html;
   document.getElementById('uploadFileName').textContent = filename;
-  document.getElementById('uploadHint').textContent = `Распознано: ${matched} из ${rows.length} строк`;
+  document.getElementById('uploadHint').textContent = `Распознано: ${matched} из ${rows.length}`;
   document.getElementById('uploadZone').classList.add('hidden');
   document.getElementById('uploadResult').classList.remove('hidden');
 }
 
-// ── Обработка файла ───────────────────────────────────────────────────────
-
+// ── Обработчик файла ──────────────────────────────────────────────────────────
 function handleFile(file) {
   const name = file.name;
   const ext  = name.split('.').pop().toLowerCase();
@@ -577,37 +523,34 @@ function handleFile(file) {
   if (ext === 'xlsx' || ext === 'xls') {
     const reader = new FileReader();
     reader.onload = e => {
-      const sheets = analyzeWorkbook(new Uint8Array(e.target.result));
-      const result = processWorkbook(sheets);
-      renderPreview(result, name);
+      const wb     = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const sheets = {};
+      wb.SheetNames.forEach(n => { sheets[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, defval:'' }); });
+      renderPreview(processWorkbook(sheets), name);
     };
     reader.readAsArrayBuffer(file);
   } else {
     const reader = new FileReader();
     reader.onload = e => {
-      const rows = parseTextRows(e.target.result, ext);
+      const text = e.target.result;
+      let rows = [];
+      if (ext==='json') { try { const o=JSON.parse(text); rows=Array.isArray(o)?o.map(i=>[Object.values(i)[0],Object.values(i)[1]]):Object.entries(o); } catch{} }
+      else { const sep=ext==='csv'?/[;,]/:/[\t:—–]/; rows=text.trim().split(/\r?\n/).map(l=>{const p=l.split(sep).map(s=>s.trim().replace(/^["']|["']$/g,'')); return p.length>=2?[p[0],p[1]]:null;}).filter(Boolean); }
       renderSimplePreview(rows, name);
     };
     reader.readAsText(file, 'UTF-8');
   }
 }
 
-// ── События ───────────────────────────────────────────────────────────────
-
-document.getElementById('browseBtn').addEventListener('click', () => {
-  document.getElementById('fileInput').click();
-});
-
-document.getElementById('fileInput').addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-});
+// ── События ───────────────────────────────────────────────────────────────────
+document.getElementById('browseBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 const zone = document.getElementById('uploadZone');
 zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.classList.remove('drag-over');
+  e.preventDefault(); zone.classList.remove('drag-over');
   if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
 });
 
@@ -620,22 +563,12 @@ document.getElementById('clearFileBtn').addEventListener('click', () => {
 
 document.getElementById('applyDataBtn').addEventListener('click', () => {
   let count = 0;
-
-  for (const [fieldId, value] of Object.entries(parsedData)) {
-    if (fieldId === '__income__') {
-      // Доход вручную назначенный: складываем в контрактные поставки
-      const el = document.getElementById('f-contracts');
-      if (el) { el.value = Math.round((parseFloat(el.value) || 0) + value); count++; }
-      continue;
-    }
-    const el = document.getElementById(fieldId);
-    if (el) { el.value = Math.round(value); count++; }
+  for (const [fid, val] of Object.entries(parsedData)) {
+    const el = document.getElementById(fid);
+    if (el) { el.value = Math.round(val); count++; }
   }
-
-  // Если есть суммарный доход от Лайнс Джамп/АГО — подставляем как выручку
-  // через f-price × f-volume (если объём не задан — ставим сумму в f-contracts)
   document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
   const hint = document.getElementById('uploadHint');
-  hint.textContent = `✓ Заполнено полей: ${count}. Проверьте данные и нажмите «Рассчитать».`;
+  hint.textContent = `✓ Заполнено полей: ${count}. Проверьте и нажмите «Рассчитать».`;
   hint.style.color = 'var(--green)';
 });
