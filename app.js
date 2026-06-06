@@ -203,3 +203,179 @@ document.getElementById('kpiBtn').addEventListener('click', () => {
   ['kpi-production','kpi-revenue','kpi-titan-fact','kpi-titan-plan','kpi-logist-fact','kpi-logist-plan','kpi-balance']
     .forEach(id => { document.getElementById(id).value = ''; });
 });
+
+// ─── FILE UPLOAD ───────────────────────────────────────────────────────────
+
+// Keyword map: ключевые слова → id поля формы
+const FIELD_MAP = [
+  { id: 'f-volume',     keys: ['объём добычи','добыча','volume','тонны','тонн'] },
+  { id: 'f-price',      keys: ['цена нефти','цена','price','спот'] },
+  { id: 'f-contracts',  keys: ['контрактные поставки','контракт','contracts'] },
+  { id: 'f-penalties',  keys: ['штрафные санкции','штрафы','penalties'] },
+  { id: 'f-rent-income',keys: ['аренда оборудования','аренда доход','rent income','сдача'] },
+  { id: 'f-titan',      keys: ['титан','titan','буровая'] },
+  { id: 'f-payroll',    keys: ['фот','зарплата','payroll','налоги с зарплаты','фонд оплаты'] },
+  { id: 'f-rent',       keys: ['аренда офиса','аренда','инфраструктура','rent'] },
+  { id: 'f-insurance',  keys: ['страхование','insurance'] },
+  { id: 'f-repair',     keys: ['ремонт','эксплуатация','repair'] },
+  { id: 'f-logistics',  keys: ['логистика','транспорт','logistics'] },
+  { id: 'f-travel',     keys: ['командировочные','командировки','travel'] },
+  { id: 'f-admin',      keys: ['административные','хозяйственные','admin'] },
+];
+
+function matchField(key) {
+  const k = key.toLowerCase().trim();
+  for (const f of FIELD_MAP) {
+    if (f.keys.some(kw => k.includes(kw))) return f.id;
+  }
+  return null;
+}
+
+function cleanNumber(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const s = String(val).replace(/\s/g, '').replace(',', '.');
+  const n = parseFloat(s.replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+let parsedData = {};
+
+function showPreview(rows, filename) {
+  const preview = document.getElementById('uploadPreview');
+  const hint    = document.getElementById('uploadHint');
+  parsedData = {};
+
+  let matched = 0;
+  let html = '<table><thead><tr><th>Поле файла</th><th>Значение</th><th>Маппинг</th></tr></thead><tbody>';
+
+  rows.forEach(([key, val]) => {
+    const fieldId = matchField(String(key));
+    const num     = cleanNumber(val);
+    const display = num !== null ? num.toLocaleString('ru-RU') : val;
+
+    if (fieldId && num !== null) {
+      parsedData[fieldId] = num;
+      matched++;
+      const label = FIELD_MAP.find(f => f.id === fieldId)?.keys[0] || fieldId;
+      html += `<tr><td>${key}</td><td>${display}</td><td class="mapped">✓ ${label}</td></tr>`;
+    } else {
+      html += `<tr><td>${key}</td><td>${display}</td><td class="unmapped">—</td></tr>`;
+    }
+  });
+
+  html += '</tbody></table>';
+  preview.innerHTML = html;
+  hint.textContent  = `Распознано полей: ${matched} из ${rows.length}`;
+
+  document.getElementById('uploadFileName').textContent = filename;
+  document.getElementById('uploadZone').classList.add('hidden');
+  document.getElementById('uploadResult').classList.remove('hidden');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows  = [];
+  for (const line of lines) {
+    // support comma and semicolon delimiters
+    const parts = line.split(/[;,]/).map(p => p.trim().replace(/^["']|["']$/g, ''));
+    if (parts.length >= 2) rows.push([parts[0], parts[1]]);
+  }
+  return rows;
+}
+
+function parseTXT(text) {
+  const rows = [];
+  for (const line of text.trim().split(/\r?\n/)) {
+    // "Key: Value" or "Key — Value" or "Key\tValue"
+    const m = line.match(/^(.+?)[\t:—–-]+\s*(.+)$/);
+    if (m) rows.push([m[1].trim(), m[2].trim()]);
+  }
+  return rows;
+}
+
+function parseJSON(text) {
+  try {
+    const obj = JSON.parse(text);
+    if (Array.isArray(obj)) {
+      // [{name, value}] or [{key, value}] or first object entries
+      return obj.map(item => {
+        const k = item.name || item.key || item.поле || item.статья || Object.keys(item)[0];
+        const v = item.value || item.значение || item.сумма || Object.values(item)[1] || Object.values(item)[0];
+        return [k, v];
+      });
+    }
+    return Object.entries(obj);
+  } catch { return []; }
+}
+
+function parseExcel(buffer) {
+  const wb  = XLSX.read(buffer, { type: 'array' });
+  const ws  = wb.Sheets[wb.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const rows = [];
+  for (const row of data) {
+    if (row.length >= 2 && row[0] !== '') rows.push([row[0], row[1]]);
+  }
+  return rows;
+}
+
+function handleFile(file) {
+  const name = file.name;
+  const ext  = name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+
+  if (ext === 'xlsx' || ext === 'xls') {
+    reader.onload = e => {
+      const rows = parseExcel(new Uint8Array(e.target.result));
+      showPreview(rows, name);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = e => {
+      const text = e.target.result;
+      let rows = [];
+      if (ext === 'csv')        rows = parseCSV(text);
+      else if (ext === 'json')  rows = parseJSON(text);
+      else                      rows = parseTXT(text);
+      showPreview(rows, name);
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+}
+
+// Events
+document.getElementById('browseBtn').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+document.getElementById('clearFileBtn').addEventListener('click', () => {
+  parsedData = {};
+  document.getElementById('fileInput').value = '';
+  document.getElementById('uploadResult').classList.add('hidden');
+  document.getElementById('uploadZone').classList.remove('hidden');
+});
+
+document.getElementById('applyDataBtn').addEventListener('click', () => {
+  let count = 0;
+  for (const [fieldId, value] of Object.entries(parsedData)) {
+    const el = document.getElementById(fieldId);
+    if (el) { el.value = value; count++; }
+  }
+  // scroll to form
+  document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('uploadHint').textContent = `✓ Заполнено полей: ${count}. Проверьте данные и нажмите «Рассчитать».`;
+  document.getElementById('uploadHint').style.color = 'var(--green)';
+});

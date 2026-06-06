@@ -6,6 +6,7 @@
   <title>ALMAS — Финансовый Ассистент</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="sidebar">
@@ -153,6 +154,30 @@
         <h1>Внести отчётность</h1>
         <div class="period-badge">Новый период</div>
       </div>
+      <!-- FILE UPLOAD -->
+      <div class="upload-card" id="uploadCard">
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">↑</div>
+          <div class="upload-title">Прикрепите файл отчётности</div>
+          <div class="upload-sub">Excel (.xlsx, .xls), CSV, JSON, TXT — перетащите сюда или нажмите</div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.json,.txt" hidden />
+          <button class="btn-upload" id="browseBtn">Выбрать файл</button>
+        </div>
+
+        <div class="upload-result hidden" id="uploadResult">
+          <div class="upload-file-info">
+            <span class="upload-file-icon">📄</span>
+            <span id="uploadFileName"></span>
+            <button class="btn-clear" id="clearFileBtn">✕</button>
+          </div>
+          <div class="upload-preview" id="uploadPreview"></div>
+          <div class="upload-actions">
+            <button class="btn-primary" id="applyDataBtn">Применить данные в форму</button>
+            <span class="upload-hint" id="uploadHint"></span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-card">
         <h2 class="form-section-title">Фиксированные доходы</h2>
         <div class="form-grid">
