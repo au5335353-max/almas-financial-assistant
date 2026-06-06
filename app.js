@@ -204,146 +204,319 @@ document.getElementById('kpiBtn').addEventListener('click', () => {
     .forEach(id => { document.getElementById(id).value = ''; });
 });
 
-// ─── FILE UPLOAD ───────────────────────────────────────────────────────────
+// ─── FILE UPLOAD ─────────────────────────────────────────────────────────────
 
-// Keyword map: ключевые слова → id поля формы
+// Правила маппинга: ключевые слова → id поля формы
 const FIELD_MAP = [
-  { id: 'f-volume',     keys: ['объём добычи','добыча','volume','тонны','тонн'] },
-  { id: 'f-price',      keys: ['цена нефти','цена','price','спот'] },
-  { id: 'f-contracts',  keys: ['контрактные поставки','контракт','contracts'] },
-  { id: 'f-penalties',  keys: ['штрафные санкции','штрафы','penalties'] },
-  { id: 'f-rent-income',keys: ['аренда оборудования','аренда доход','rent income','сдача'] },
-  { id: 'f-titan',      keys: ['титан','titan','буровая'] },
-  { id: 'f-payroll',    keys: ['фот','зарплата','payroll','налоги с зарплаты','фонд оплаты'] },
-  { id: 'f-rent',       keys: ['аренда офиса','аренда','инфраструктура','rent'] },
-  { id: 'f-insurance',  keys: ['страхование','insurance'] },
-  { id: 'f-repair',     keys: ['ремонт','эксплуатация','repair'] },
-  { id: 'f-logistics',  keys: ['логистика','транспорт','logistics'] },
-  { id: 'f-travel',     keys: ['командировочные','командировки','travel'] },
-  { id: 'f-admin',      keys: ['административные','хозяйственные','admin'] },
+  { id: 'f-volume',      label: 'Объём добычи (тонны)',            keys: ['объём добычи','добыча','volume','тонны','тонн','нефть добыч'] },
+  { id: 'f-price',       label: 'Цена нефти (₸/тонна)',            keys: ['цена нефти','цена реализ','price','спот','стоимость нефти'] },
+  { id: 'f-contracts',   label: 'Контрактные поставки',            keys: ['контрактные поставки','контракт','долгосрочн'] },
+  { id: 'f-penalties',   label: 'Штрафные санкции',                keys: ['штраф','неустойка','penalties','санкц'] },
+  { id: 'f-rent-income', label: 'Аренда оборудования (доход)',     keys: ['аренда оборудован','сдача в аренду','аренда актив','доход аренд'] },
+  { id: 'f-titan',       label: 'Буровая компания Титан',          keys: ['титан','titan','буровая','тоо тит','тоо «тит','ооо тит','drilling'] },
+  { id: 'f-payroll',     label: 'ФОТ и налоги',                   keys: ['фот','зарплат','salary','payroll','оплата труд','налог с зарп','соц отч','пенсионн','инпн','ипн','фонд оплат','лд','физ лицо','физическое лицо'] },
+  { id: 'f-rent',        label: 'Аренда офиса / инфраструктура',   keys: ['аренда офис','аренда помещ','аренда склад','коммунал','электр','газ','вода','инфраструктур'] },
+  { id: 'f-insurance',   label: 'Страхование',                     keys: ['страхован','insurance','страховка','полис'] },
+  { id: 'f-repair',      label: 'Ремонт и эксплуатация',           keys: ['ремонт','эксплуатац','тех обслуж','запчаст','зип','техническ обслуж','repair','maintenance','сервис'] },
+  { id: 'f-logistics',   label: 'Логистика и транспорт',           keys: ['логистик','транспорт','перевозк','доставк','freight','logistics','тоо aktobe','aktobe gruup','it-cube','ит куб'] },
+  { id: 'f-travel',      label: 'Командировочные',                 keys: ['командиров','суточные','travel','билет','гостиниц','проезд'] },
+  { id: 'f-admin',       label: 'Административные расходы',        keys: ['администрат','хозяйствен','офисн','канцел','связь','интернет','почта','банковск','комисс','расчётно-кассов','рко','налог на имущ','зем налог','нds','ндс','налог','сбор'] },
 ];
 
-function matchField(key) {
-  const k = key.toLowerCase().trim();
+// Категории доходов для автоматического распознавания
+const INCOME_KEYS = ['выручка','реализац','продажа нефти','доход от реализ','поступлен','revenue','income','приход','зачислен'];
+
+function matchField(text) {
+  const t = String(text).toLowerCase().trim();
   for (const f of FIELD_MAP) {
-    if (f.keys.some(kw => k.includes(kw))) return f.id;
+    if (f.keys.some(kw => t.includes(kw))) return f;
   }
   return null;
 }
 
-function cleanNumber(val) {
-  if (val === null || val === undefined || val === '') return null;
-  const s = String(val).replace(/\s/g, '').replace(',', '.');
-  const n = parseFloat(s.replace(/[^\d.\-]/g, ''));
-  return isNaN(n) ? null : n;
+function isIncomeRow(text) {
+  const t = String(text).toLowerCase();
+  return INCOME_KEYS.some(k => t.includes(k));
 }
+
+function cleanNum(val) {
+  if (val === null || val === undefined || val === '' || val === '—' || val === '-') return null;
+  const s = String(val).replace(/\s/g, '').replace(',', '.').replace(/[^\d.\-]/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) || n === 0 ? null : n;
+}
+
+// ── Умный анализ Excel: все листы, поиск числовых колонок ──────────────────
+
+function analyzeWorkbook(buffer) {
+  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+  const sheets = {};
+
+  wb.SheetNames.forEach(sheetName => {
+    const ws   = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    sheets[sheetName] = rows;
+  });
+
+  return sheets;
+}
+
+// Находит числовые колонки в листе и возвращает {colIndex, header}[]
+function findNumericCols(rows) {
+  if (rows.length < 2) return [];
+  const headerRow = rows.find(r => r.some(c => c !== '')) || rows[0];
+  const numCols = [];
+
+  for (let ci = 0; ci < headerRow.length; ci++) {
+    let numCount = 0;
+    for (let ri = 1; ri < Math.min(rows.length, 30); ri++) {
+      if (cleanNum(rows[ri][ci]) !== null) numCount++;
+    }
+    if (numCount >= 2) {
+      numCols.push({ colIndex: ci, header: String(headerRow[ci] || `Колонка ${ci+1}`) });
+    }
+  }
+  return numCols;
+}
+
+// Находит текстовую колонку (наименование/контрагент)
+function findLabelCol(rows) {
+  if (rows.length < 2) return 0;
+  const headerRow = rows[0];
+  // Ищем колонку с заголовком "наименование", "контрагент", "статья" и т.д.
+  const labelKeys = ['наименован','контрагент','статья','описан','назначен','получател','плательщ','name','description'];
+  for (let ci = 0; ci < headerRow.length; ci++) {
+    const h = String(headerRow[ci]).toLowerCase();
+    if (labelKeys.some(k => h.includes(k))) return ci;
+  }
+  // Fallback: первая колонка с текстом
+  for (let ci = 0; ci < headerRow.length; ci++) {
+    let textCount = 0;
+    for (let ri = 1; ri < Math.min(rows.length, 20); ri++) {
+      const v = rows[ri][ci];
+      if (v && isNaN(parseFloat(String(v).replace(/\s/g,'')))) textCount++;
+    }
+    if (textCount >= 3) return ci;
+  }
+  return 0;
+}
+
+// Суммирует транзакции по маппингу
+function aggregateSheet(rows, labelCol, amountCol) {
+  const totals = {}; // fieldId → sum
+  const byCounterparty = {}; // label → {fieldId, sum, count}
+  const unmatched = {}; // label → sum
+  let totalIncome = 0;
+
+  for (let ri = 1; ri < rows.length; ri++) {
+    const row   = rows[ri];
+    const label = String(row[labelCol] || '').trim();
+    const num   = cleanNum(row[amountCol]);
+
+    if (!label || num === null || num <= 0) continue;
+
+    if (isIncomeRow(label)) {
+      totalIncome += num;
+      continue;
+    }
+
+    const match = matchField(label);
+    if (match) {
+      totals[match.id] = (totals[match.id] || 0) + num;
+      if (!byCounterparty[label]) byCounterparty[label] = { fieldId: match.id, fieldLabel: match.label, sum: 0, count: 0 };
+      byCounterparty[label].sum   += num;
+      byCounterparty[label].count += 1;
+    } else {
+      unmatched[label] = (unmatched[label] || 0) + num;
+    }
+  }
+
+  return { totals, byCounterparty, unmatched, totalIncome };
+}
+
+// Основная функция разбора всех листов
+function processWorkbook(sheets) {
+  const allTotals      = {};
+  const allCounterpart = {};
+  const allUnmatched   = {};
+  let   grandIncome    = 0;
+  const sheetSummaries = [];
+
+  for (const [sheetName, rows] of Object.entries(sheets)) {
+    if (rows.length < 2) continue;
+
+    const labelCol   = findLabelCol(rows);
+    const numCols    = findNumericCols(rows);
+    if (numCols.length === 0) continue;
+
+    // Берём колонку с наибольшей суммой (скорее всего — сумма транзакции)
+    let bestCol = numCols[0];
+    let bestSum = 0;
+    for (const nc of numCols) {
+      let s = 0;
+      for (let ri = 1; ri < rows.length; ri++) { const n = cleanNum(rows[ri][nc.colIndex]); if (n && n > 0) s += n; }
+      if (s > bestSum) { bestSum = s; bestCol = nc; }
+    }
+
+    const { totals, byCounterparty, unmatched, totalIncome } = aggregateSheet(rows, labelCol, bestCol.colIndex);
+
+    sheetSummaries.push({ sheetName, rowCount: rows.length - 1, amountCol: bestCol.header, totalIncome, totals, byCounterparty, unmatched });
+    grandIncome += totalIncome;
+    for (const [k, v] of Object.entries(totals))       allTotals[k] = (allTotals[k] || 0) + v;
+    for (const [k, v] of Object.entries(byCounterparty)) {
+      if (!allCounterpart[k]) allCounterpart[k] = { ...v };
+      else { allCounterpart[k].sum += v.sum; allCounterpart[k].count += v.count; }
+    }
+    for (const [k, v] of Object.entries(unmatched))    allUnmatched[k] = (allUnmatched[k] || 0) + v;
+  }
+
+  return { allTotals, allCounterpart, allUnmatched, grandIncome, sheetSummaries };
+}
+
+// ── Простой парсер CSV/TXT/JSON (оставляем) ──────────────────────────────
+
+function parseTextRows(text, ext) {
+  if (ext === 'json') {
+    try {
+      const obj = JSON.parse(text);
+      if (Array.isArray(obj)) return obj.map(item => [Object.values(item)[0], Object.values(item)[1]]);
+      return Object.entries(obj);
+    } catch { return []; }
+  }
+  const sep = ext === 'csv' ? /[;,]/ : /[\t:—–]/;
+  return text.trim().split(/\r?\n/).map(line => {
+    const parts = line.split(sep).map(p => p.trim().replace(/^["']|["']$/g, ''));
+    return parts.length >= 2 ? [parts[0], parts[1]] : null;
+  }).filter(Boolean);
+}
+
+// ── Рендер превью ─────────────────────────────────────────────────────────
 
 let parsedData = {};
 
-function showPreview(rows, filename) {
-  const preview = document.getElementById('uploadPreview');
-  const hint    = document.getElementById('uploadHint');
-  parsedData = {};
+function renderPreview(result, filename) {
+  const { allTotals, allCounterpart, allUnmatched, grandIncome, sheetSummaries } = result;
+  parsedData = { ...allTotals };
 
+  const fmtN = n => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+  let html = '';
+
+  // Сводка по листам
+  html += `<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">
+    Листов обработано: <strong style="color:var(--text)">${sheetSummaries.length}</strong> &nbsp;|&nbsp;
+    Доходы: <strong style="color:var(--green)">₸${fmtN(grandIncome)}</strong>
+  </div>`;
+
+  // Таблица: распознанные → форма
+  if (Object.keys(allCounterpart).length > 0) {
+    html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Распознанные транзакции</div>`;
+    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Лист</th><th>Сумма (₸)</th><th>Категория</th></tr></thead><tbody>`;
+    for (const [label, info] of Object.entries(allCounterpart)) {
+      const sheet = sheetSummaries.find(s => s.byCounterparty[label])?.sheetName || '—';
+      html += `<tr>
+        <td>${label}</td>
+        <td style="color:var(--text2);font-size:11px">${sheet}</td>
+        <td style="font-weight:600">${fmtN(info.sum)}</td>
+        <td class="mapped">→ ${info.fieldLabel}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  // Таблица: нераспознанные
+  if (Object.keys(allUnmatched).length > 0) {
+    html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Нераспознанные строки</div>`;
+    html += `<table><thead><tr><th>Контрагент / Статья</th><th>Сумма (₸)</th><th>Действие</th></tr></thead><tbody>`;
+    for (const [label, sum] of Object.entries(allUnmatched)) {
+      html += `<tr>
+        <td>${label}</td>
+        <td>${fmtN(sum)}</td>
+        <td><select class="manual-map" data-label="${label}" data-sum="${sum}" style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--text);font-size:11px">
+          <option value="">— выбрать категорию —</option>
+          ${FIELD_MAP.map(f => `<option value="${f.id}">${f.label}</option>`).join('')}
+        </select></td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  document.getElementById('uploadPreview').innerHTML = html;
+  document.getElementById('uploadFileName').textContent = filename;
+  document.getElementById('uploadHint').textContent =
+    `Автоматически распознано: ${Object.keys(allCounterpart).length} строк · Нераспознано: ${Object.keys(allUnmatched).length}`;
+  document.getElementById('uploadHint').style.color = '';
+  document.getElementById('uploadZone').classList.add('hidden');
+  document.getElementById('uploadResult').classList.remove('hidden');
+
+  // Ручной маппинг нераспознанных
+  document.querySelectorAll('.manual-map').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const fieldId = sel.value;
+      const sum     = parseFloat(sel.dataset.sum);
+      const label   = sel.dataset.label;
+      if (fieldId && sum) {
+        parsedData[fieldId] = (parsedData[fieldId] || 0) + sum;
+        sel.closest('tr').style.opacity = '.5';
+        sel.disabled = true;
+        document.getElementById('uploadHint').textContent = `Добавлено вручную: ${label} → ${FIELD_MAP.find(f=>f.id===fieldId)?.label}`;
+        document.getElementById('uploadHint').style.color = 'var(--green)';
+      }
+    });
+  });
+}
+
+function renderSimplePreview(rows, filename) {
+  parsedData = {};
+  const fmtN = n => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
   let matched = 0;
-  let html = '<table><thead><tr><th>Поле файла</th><th>Значение</th><th>Маппинг</th></tr></thead><tbody>';
+  let html = `<table><thead><tr><th>Поле</th><th>Значение</th><th>Категория</th></tr></thead><tbody>`;
 
   rows.forEach(([key, val]) => {
-    const fieldId = matchField(String(key));
-    const num     = cleanNumber(val);
-    const display = num !== null ? num.toLocaleString('ru-RU') : val;
-
-    if (fieldId && num !== null) {
-      parsedData[fieldId] = num;
+    const f   = matchField(String(key));
+    const num = cleanNum(val);
+    if (f && num !== null) {
+      parsedData[f.id] = (parsedData[f.id] || 0) + num;
       matched++;
-      const label = FIELD_MAP.find(f => f.id === fieldId)?.keys[0] || fieldId;
-      html += `<tr><td>${key}</td><td>${display}</td><td class="mapped">✓ ${label}</td></tr>`;
+      html += `<tr><td>${key}</td><td>${fmtN(num)}</td><td class="mapped">→ ${f.label}</td></tr>`;
     } else {
-      html += `<tr><td>${key}</td><td>${display}</td><td class="unmapped">—</td></tr>`;
+      html += `<tr><td>${key}</td><td>${val}</td><td class="unmapped">—</td></tr>`;
     }
   });
+  html += `</tbody></table>`;
 
-  html += '</tbody></table>';
-  preview.innerHTML = html;
-  hint.textContent  = `Распознано полей: ${matched} из ${rows.length}`;
-
+  document.getElementById('uploadPreview').innerHTML = html;
   document.getElementById('uploadFileName').textContent = filename;
+  document.getElementById('uploadHint').textContent = `Распознано: ${matched} из ${rows.length} строк`;
   document.getElementById('uploadZone').classList.add('hidden');
   document.getElementById('uploadResult').classList.remove('hidden');
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const rows  = [];
-  for (const line of lines) {
-    // support comma and semicolon delimiters
-    const parts = line.split(/[;,]/).map(p => p.trim().replace(/^["']|["']$/g, ''));
-    if (parts.length >= 2) rows.push([parts[0], parts[1]]);
-  }
-  return rows;
-}
-
-function parseTXT(text) {
-  const rows = [];
-  for (const line of text.trim().split(/\r?\n/)) {
-    // "Key: Value" or "Key — Value" or "Key\tValue"
-    const m = line.match(/^(.+?)[\t:—–-]+\s*(.+)$/);
-    if (m) rows.push([m[1].trim(), m[2].trim()]);
-  }
-  return rows;
-}
-
-function parseJSON(text) {
-  try {
-    const obj = JSON.parse(text);
-    if (Array.isArray(obj)) {
-      // [{name, value}] or [{key, value}] or first object entries
-      return obj.map(item => {
-        const k = item.name || item.key || item.поле || item.статья || Object.keys(item)[0];
-        const v = item.value || item.значение || item.сумма || Object.values(item)[1] || Object.values(item)[0];
-        return [k, v];
-      });
-    }
-    return Object.entries(obj);
-  } catch { return []; }
-}
-
-function parseExcel(buffer) {
-  const wb  = XLSX.read(buffer, { type: 'array' });
-  const ws  = wb.Sheets[wb.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-  const rows = [];
-  for (const row of data) {
-    if (row.length >= 2 && row[0] !== '') rows.push([row[0], row[1]]);
-  }
-  return rows;
-}
+// ── Обработка файла ───────────────────────────────────────────────────────
 
 function handleFile(file) {
   const name = file.name;
   const ext  = name.split('.').pop().toLowerCase();
-  const reader = new FileReader();
 
   if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
     reader.onload = e => {
-      const rows = parseExcel(new Uint8Array(e.target.result));
-      showPreview(rows, name);
+      const sheets = analyzeWorkbook(new Uint8Array(e.target.result));
+      const result = processWorkbook(sheets);
+      renderPreview(result, name);
     };
     reader.readAsArrayBuffer(file);
   } else {
+    const reader = new FileReader();
     reader.onload = e => {
-      const text = e.target.result;
-      let rows = [];
-      if (ext === 'csv')        rows = parseCSV(text);
-      else if (ext === 'json')  rows = parseJSON(text);
-      else                      rows = parseTXT(text);
-      showPreview(rows, name);
+      const rows = parseTextRows(e.target.result, ext);
+      renderSimplePreview(rows, name);
     };
     reader.readAsText(file, 'UTF-8');
   }
 }
 
-// Events
+// ── События ───────────────────────────────────────────────────────────────
+
 document.getElementById('browseBtn').addEventListener('click', () => {
   document.getElementById('fileInput').click();
 });
@@ -353,7 +526,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
 });
 
 const zone = document.getElementById('uploadZone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
   e.preventDefault();
@@ -372,10 +545,10 @@ document.getElementById('applyDataBtn').addEventListener('click', () => {
   let count = 0;
   for (const [fieldId, value] of Object.entries(parsedData)) {
     const el = document.getElementById(fieldId);
-    if (el) { el.value = value; count++; }
+    if (el) { el.value = Math.round(value); count++; }
   }
-  // scroll to form
   document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
-  document.getElementById('uploadHint').textContent = `✓ Заполнено полей: ${count}. Проверьте данные и нажмите «Рассчитать».`;
-  document.getElementById('uploadHint').style.color = 'var(--green)';
+  const hint = document.getElementById('uploadHint');
+  hint.textContent = `✓ Заполнено полей: ${count}. Проверьте данные и нажмите «Рассчитать».`;
+  hint.style.color = 'var(--green)';
 });

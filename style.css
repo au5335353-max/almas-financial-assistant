@@ -525,6 +525,10 @@ nav { padding: 16px 12px; flex: 1; display: flex; flex-direction: column; gap: 4
 .upload-actions { display: flex; align-items: center; gap: 14px; }
 .upload-hint { font-size: 12px; color: var(--text2); }
 
+.manual-map option { background: var(--bg2); color: var(--text); }
+.upload-preview .mapped { color: var(--green); font-weight: 600; font-size: 12px; }
+.upload-preview .unmapped { color: var(--text2); font-size: 12px; }
+
 @media (max-width: 1000px) {
   .metrics-grid { grid-template-columns: 1fr 1fr; }
   .charts-row { grid-template-columns: 1fr; }
