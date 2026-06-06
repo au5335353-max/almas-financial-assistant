@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALMAS — Финансовый Ассистент</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">A</div>
+      <div class="logo-text">ALMAS</div>
+    </div>
+    <nav>
+      <a href="#" class="nav-item active" data-section="dashboard">
+        <span class="nav-icon">▦</span> Дашборд
+      </a>
+      <a href="#" class="nav-item" data-section="report">
+        <span class="nav-icon">↑</span> Внести отчёт
+      </a>
+      <a href="#" class="nav-item" data-section="audit">
+        <span class="nav-icon">✓</span> Аудит
+      </a>
+      <a href="#" class="nav-item" data-section="kpi">
+        <span class="nav-icon">◎</span> KPI директора
+      </a>
+      <a href="#" class="nav-item" data-section="optimize">
+        <span class="nav-icon">▲</span> Оптимизация
+      </a>
+      <a href="#" class="nav-item" data-section="risks">
+        <span class="nav-icon">⚑</span> Риски
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar">О</div>
+        <div>
+          <div class="user-name">Основатель</div>
+          <div class="user-role">Нефтяная компания · 1 000 т/мес</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="section active">
+      <div class="page-header">
+        <h1>Финансовый дашборд</h1>
+        <div class="period-badge">Июнь 2026</div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Выручка</div>
+          <div class="metric-value">₸82 500 000</div>
+          <div class="metric-delta positive">▲ +4.2% к маю</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Расходы</div>
+          <div class="metric-value">₸59 400 000</div>
+          <div class="metric-delta negative">▲ +2.8% к маю</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Чистая прибыль</div>
+          <div class="metric-value">₸23 100 000</div>
+          <div class="metric-delta positive">▲ +6.3% к маю</div>
+        </div>
+        <div class="metric-card critical">
+          <div class="metric-label">EBITDA margin</div>
+          <div class="metric-value">28.0%</div>
+          <div class="metric-delta negative">✗ Цель: 35%+ · Отставание: 7 п.п.</div>
+        </div>
+        <div class="metric-card critical">
+          <div class="metric-label">Себестоимость / тонна</div>
+          <div class="metric-value">₸59 400</div>
+          <div class="metric-delta negative">✗ Цель: ≤₸55 000 · Превышение: +₸4 400</div>
+        </div>
+        <div class="metric-card critical">
+          <div class="metric-label">Коэффициент расходов</div>
+          <div class="metric-value">72.0%</div>
+          <div class="metric-delta negative">✗ Норма: ≤65% · Превышение: +7 п.п.</div>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-item status-critical">
+          <span>!</span> Критично: 3 показателя вне нормы — требуется немедленное действие
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card wide">
+          <div class="chart-title">Динамика за 5 месяцев (₸)</div>
+          <canvas id="trendChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Структура расходов</div>
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Расходы по статьям (₸)</div>
+        <canvas id="barChart"></canvas>
+      </div>
+
+      <div class="targets-card">
+        <div class="targets-title">Статус целевых показателей</div>
+        <div class="targets-grid">
+          <div class="target-row">
+            <span class="target-name">EBITDA margin</span>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" style="width:80%"><span>28%</span></div>
+            </div>
+            <span class="target-goal">Цель: 35%</span>
+            <span class="badge-fail">✗</span>
+          </div>
+          <div class="target-row">
+            <span class="target-name">Себест./тонна</span>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar danger" style="width:108%"><span>₸59 400</span></div>
+            </div>
+            <span class="target-goal">Цель: ₸55 000</span>
+            <span class="badge-fail">✗</span>
+          </div>
+          <div class="target-row">
+            <span class="target-name">Коэфф. расходов</span>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar danger" style="width:100%"><span>72%</span></div>
+            </div>
+            <span class="target-goal">Норма: ≤65%</span>
+            <span class="badge-fail">✗</span>
+          </div>
+          <div class="target-row">
+            <span class="target-name">Доля Титан</span>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar danger" style="width:100%"><span>38%</span></div>
+            </div>
+            <span class="target-goal">Норма: ≤30%</span>
+            <span class="badge-fail">✗</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT INPUT -->
+    <section id="report" class="section">
+      <div class="page-header">
+        <h1>Внести отчётность</h1>
+        <div class="period-badge">Новый период</div>
+      </div>
+      <div class="form-card">
+        <h2 class="form-section-title">Фиксированные доходы</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Объём добычи (тонны)</label>
+            <input type="number" id="f-volume" placeholder="1000" />
+          </div>
+          <div class="form-group">
+            <label>Цена нефти (₸/тонна)</label>
+            <input type="number" id="f-price" placeholder="82500" />
+          </div>
+          <div class="form-group">
+            <label>Контрактные поставки (₸)</label>
+            <input type="number" id="f-contracts" placeholder="0" />
+          </div>
+        </div>
+
+        <h2 class="form-section-title">Переменные доходы</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Штрафные санкции контрагентам (₸)</label>
+            <input type="number" id="f-penalties" placeholder="0" />
+          </div>
+          <div class="form-group">
+            <label>Аренда оборудования (₸)</label>
+            <input type="number" id="f-rent-income" placeholder="0" />
+          </div>
+        </div>
+
+        <h2 class="form-section-title">Фиксированные расходы</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Буровая компания Титан (₸)</label>
+            <input type="number" id="f-titan" placeholder="22600000" />
+          </div>
+          <div class="form-group">
+            <label>ФОТ и налоги с зарплаты (₸)</label>
+            <input type="number" id="f-payroll" placeholder="12000000" />
+          </div>
+          <div class="form-group">
+            <label>Аренда офиса / инфраструктура (₸)</label>
+            <input type="number" id="f-rent" placeholder="4000000" />
+          </div>
+          <div class="form-group">
+            <label>Страхование производственное (₸)</label>
+            <input type="number" id="f-insurance" placeholder="2000000" />
+          </div>
+        </div>
+
+        <h2 class="form-section-title">Переменные расходы</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Эксплуатация и ремонт (₸)</label>
+            <input type="number" id="f-repair" placeholder="8000000" />
+          </div>
+          <div class="form-group">
+            <label>Логистика и транспортировка (₸)</label>
+            <input type="number" id="f-logistics" placeholder="7000000" />
+          </div>
+          <div class="form-group">
+            <label>Командировочные расходы (₸)</label>
+            <input type="number" id="f-travel" placeholder="2000000" />
+          </div>
+          <div class="form-group">
+            <label>Хозяйственные и административные (₸)</label>
+            <input type="number" id="f-admin" placeholder="1800000" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" id="calcBtn">Рассчитать и провести аудит</button>
+        </div>
+        <div id="reportResult" class="report-result hidden"></div>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="audit" class="section">
+      <div class="page-header">
+        <h1>Аудит расходов</h1>
+        <div class="period-badge">Июнь 2026</div>
+      </div>
+
+      <div class="checklist-card">
+        <div class="checklist-title">Чек-лист аудита</div>
+        <div class="checklist-grid" id="auditChecklist">
+          <div class="check-item fail"><span class="check-icon">✗</span><span>Коэффициент расходов ≤ 65% <em>(факт: 72%)</em></span></div>
+          <div class="check-item fail"><span class="check-icon">✗</span><span>EBITDA margin ≥ 35% <em>(факт: 28%)</em></span></div>
+          <div class="check-item fail"><span class="check-icon">✗</span><span>Доля Титан ≤ 30% <em>(факт: 38%)</em></span></div>
+          <div class="check-item fail"><span class="check-icon">✗</span><span>Себестоимость ≤ ₸55 000/т <em>(факт: ₸59 400)</em></span></div>
+          <div class="check-item ok"><span class="check-icon">✓</span><span>Рост логистики ≤ +10% м/м <em>(факт: +3.1%)</em></span></div>
+          <div class="check-item warn"><span class="check-icon">▲</span><span>ФОТ соответствует объёму добычи <em>(требует проверки)</em></span></div>
+          <div class="check-item warn"><span class="check-icon">▲</span><span>Бюджетное отклонение ≤ ±5% <em>(нет планового бюджета)</em></span></div>
+          <div class="check-item warn"><span class="check-icon">▲</span><span>Тендерная документация на логистику <em>(не проводился)</em></span></div>
+        </div>
+      </div>
+
+      <div class="alerts-container">
+        <div class="alert alert-critical">
+          <div class="alert-icon">!</div>
+          <div class="alert-body">
+            <div class="alert-title">КРИТИЧНО — Доля Титан 38% превышает норму ≤30%</div>
+            <div class="alert-text">Буровая компания Титан занимает 38% всех расходов без KPI-привязки. При добыче 1 000 т/мес это создаёт прямой риск: простой или снижение добычи не влечёт штрафов, перевыполнение — не поощряется.</div>
+            <div class="alert-action">Действие: инициировать переговоры по KPI-договору с Титан. Подготовить 2 альтернативных подрядчика как рычаг давления. Срок: 2 недели.</div>
+          </div>
+        </div>
+        <div class="alert alert-critical">
+          <div class="alert-icon">!</div>
+          <div class="alert-body">
+            <div class="alert-title">КРИТИЧНО — Себестоимость ₸59 400/т превышает цель ₸55 000/т</div>
+            <div class="alert-text">Превышение +₸4 400/тонна = потери ₸4 400 000/мес при текущем объёме добычи. Основные драйверы: Титан, ремонт оборудования.</div>
+            <div class="alert-action">Действие: детализировать структуру затрат Титан, провести аудит ремонтных расходов за 3 месяца.</div>
+          </div>
+        </div>
+        <div class="alert alert-critical">
+          <div class="alert-icon">!</div>
+          <div class="alert-body">
+            <div class="alert-title">КРИТИЧНО — EBITDA 28% против цели 35%+</div>
+            <div class="alert-text">Отставание 7 п.п. = недополученная прибыль ₸5 775 000/мес. При коэффициенте расходов 72% каждые 100 рублей выручки уходит ₸72 на расходы вместо нормативных ₸65.</div>
+            <div class="alert-action">Действие: реализовать программу оптимизации расходов в разделе «Оптимизация». Минимальный потенциал: +₸4 700 000/мес.</div>
+          </div>
+        </div>
+        <div class="alert alert-warning">
+          <div class="alert-icon">▲</div>
+          <div class="alert-body">
+            <div class="alert-title">ВНИМАНИЕ — Нет тендера на логистику</div>
+            <div class="alert-text">Логистика и транспортировка — переменная статья без конкурентного контроля. Рынок позволяет снизить тариф на 15–25% через тендер среди 3+ перевозчиков.</div>
+            <div class="alert-action">Действие: запустить тендер на логистику. Запросить КП у 3 перевозчиков. Потенциал: ₸1–2 млн/мес.</div>
+          </div>
+        </div>
+        <div class="alert alert-ok">
+          <div class="alert-icon">✓</div>
+          <div class="alert-body">
+            <div class="alert-title">ОК — Рост логистики в норме (+3.1% м/м)</div>
+            <div class="alert-text">Логистические расходы растут в пределах допустимого (+10% м/м). Аномалий нет.</div>
+          </div>
+        </div>
+        <div class="alert alert-ok">
+          <div class="alert-icon">✓</div>
+          <div class="alert-body">
+            <div class="alert-title">ОК — Выручка растёт (+4.2% м/м)</div>
+            <div class="alert-text">Добыча стабильна 1 000 т/мес. Рост выручки обусловлен ценовым фактором.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI DIRECTOR -->
+    <section id="kpi" class="section">
+      <div class="page-header">
+        <h1>KPI директора</h1>
+        <div class="period-badge">Еженедельный контроль</div>
+      </div>
+
+      <div class="info-box">
+        Дистанционный формат: 5 обязательных показателей еженедельно от директора. Цель — выявлять отклонения раньше ежемесячной отчётности.
+      </div>
+
+      <div class="form-card">
+        <h2 class="form-section-title">Внести еженедельный отчёт</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>1. Объём добычи (тонны/сутки)</label>
+            <input type="number" id="kpi-production" placeholder="33.3" />
+          </div>
+          <div class="form-group">
+            <label>2. Выручка нарастающим итогом за месяц (₸)</label>
+            <input type="number" id="kpi-revenue" placeholder="20000000" />
+          </div>
+          <div class="form-group">
+            <label>3. Расходы Титан — факт (₸)</label>
+            <input type="number" id="kpi-titan-fact" placeholder="5650000" />
+          </div>
+          <div class="form-group">
+            <label>3. Расходы Титан — план (₸)</label>
+            <input type="number" id="kpi-titan-plan" placeholder="5650000" />
+          </div>
+          <div class="form-group">
+            <label>4. Логистика — факт (₸)</label>
+            <input type="number" id="kpi-logist-fact" placeholder="1750000" />
+          </div>
+          <div class="form-group">
+            <label>4. Логистика — план (₸)</label>
+            <input type="number" id="kpi-logist-plan" placeholder="1750000" />
+          </div>
+          <div class="form-group">
+            <label>5. Остаток на расчётном счёте (₸)</label>
+            <input type="number" id="kpi-balance" placeholder="15000000" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="kpiBtn">Сохранить отчёт</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="form-section-title">История отчётов</h2>
+        <div class="table-wrap">
+          <table class="kpi-table">
+            <thead>
+              <tr>
+                <th>Неделя</th>
+                <th>Добыча (т/сут)</th>
+                <th>Выручка нарастающим</th>
+                <th>Титан ф / п</th>
+                <th>Логистика ф / п</th>
+                <th>Остаток р/с</th>
+              </tr>
+            </thead>
+            <tbody id="kpiBody">
+              <tr>
+                <td>26 мая</td>
+                <td>33.1</td>
+                <td>₸18 200 000</td>
+                <td class="ok">₸5.4М / ₸5.65М</td>
+                <td class="ok">₸1.6М / ₸1.75М</td>
+                <td>₸14 500 000</td>
+              </tr>
+              <tr>
+                <td>19 мая</td>
+                <td>32.8</td>
+                <td>₸12 100 000</td>
+                <td class="warn">₸5.9М / ₸5.65М</td>
+                <td class="ok">₸1.7М / ₸1.75М</td>
+                <td>₸11 200 000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPTIMIZATION -->
+    <section id="optimize" class="section">
+      <div class="page-header">
+        <h1>Оптимизация расходов и точки роста</h1>
+        <div class="period-badge">Приоритизировано</div>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-card">
+          <div class="summary-label">Потенциал (мин.)</div>
+          <div class="summary-value green">+₸4 700 000/мес</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Потенциал (опт.)</div>
+          <div class="summary-value green">+₸9 500 000/мес</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">EBITDA при опт. сценарии</div>
+          <div class="summary-value green">38–40%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="form-section-title">Оптимизация расходов — по приоритету</h2>
+        <table class="opt-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Направление</th>
+              <th>Действие</th>
+              <th>Мин. экономия</th>
+              <th>Макс. экономия</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="priority-1">1</td>
+              <td><strong>Буровая компания Титан</strong></td>
+              <td>Ввод KPI добычи (т/сутки), штрафы за простой, бонусы за перевыполнение. Подготовить 2 альтернативных подрядчика.</td>
+              <td>₸2 000 000</td>
+              <td>₸4 000 000</td>
+              <td><span class="status-badge pending">В работе</span></td>
+            </tr>
+            <tr>
+              <td class="priority-2">2</td>
+              <td><strong>Логистика</strong></td>
+              <td>Тендер среди 3+ перевозчиков. Запросить КП, сравнить тарифы, зафиксировать цену в долгосрочном договоре.</td>
+              <td>₸1 000 000</td>
+              <td>₸2 000 000</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+            <tr>
+              <td class="priority-3">3</td>
+              <td><strong>ФОТ</strong></td>
+              <td>Переменная часть оклада, привязка к объёму добычи (т/мес). При снижении добычи — автоматическое снижение ФОТ.</td>
+              <td>₸500 000</td>
+              <td>₸1 500 000</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 class="form-section-title">Точки роста доходов</h2>
+        <table class="opt-table">
+          <thead>
+            <tr>
+              <th>Направление</th>
+              <th>Действие</th>
+              <th>Потенциал</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Аренда оборудования</strong></td>
+              <td>Ревизия простаивающих активов. Активная сдача в аренду сторонним компаниям.</td>
+              <td>+₸1 500 000 – ₸2 500 000/мес</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+            <tr>
+              <td><strong>Хеджирование цены нефти</strong></td>
+              <td>Долгосрочные контракты 3–6 месяцев. Фиксация цены снижает волатильность выручки.</td>
+              <td>Снижение волатильности</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 class="form-section-title">Приоритеты первого спринта</h2>
+        <table class="sprint-table">
+          <thead>
+            <tr><th>#</th><th>Задача</th><th>Срок</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Настроить Custom Instructions в аккаунте Claude</td>
+              <td>День 1</td>
+              <td><span class="status-badge done">Выполнено</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Установить приложение Claude на телефон</td>
+              <td>День 1</td>
+              <td><span class="status-badge done">Выполнено</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Ввести данные за последние 3 месяца</td>
+              <td>Неделя 1</td>
+              <td><span class="status-badge pending">В работе</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Запустить еженедельный KPI-отчёт от директора</td>
+              <td>Неделя 1</td>
+              <td><span class="status-badge pending">В работе</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Инициировать переговоры с Титан по KPI-договору</td>
+              <td>Неделя 2</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Провести тендер на логистику (3 перевозчика)</td>
+              <td>Месяц 1</td>
+              <td><span class="status-badge todo">Запланировано</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RISKS -->
+    <section id="risks" class="section">
+      <div class="page-header">
+        <h1>Риски и митигация</h1>
+        <div class="period-badge">Актуально</div>
+      </div>
+      <div class="card">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>Риск</th>
+              <th>Вероятность</th>
+              <th>Митигация</th>
+              <th>Приоритет</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Директор не предоставляет KPI еженедельно</td>
+              <td><span class="risk-badge medium">Средняя</span></td>
+              <td>Ввести еженедельный отчёт как обязательный регламент с дедлайном (понедельник, 09:00). Штраф за нарушение.</td>
+              <td><span class="priority-badge p1">Высокий</span></td>
+            </tr>
+            <tr>
+              <td>Волатильность спотовой цены на нефть</td>
+              <td><span class="risk-badge high">Высокая</span></td>
+              <td>Хеджирование через долгосрочные контракты на 3–6 мес. Фиксация минимальной цены реализации.</td>
+              <td><span class="priority-badge p1">Высокий</span></td>
+            </tr>
+            <tr>
+              <td>Сопротивление Титан при пересмотре договора</td>
+              <td><span class="risk-badge medium">Средняя</span></td>
+              <td>Подготовить 2 альтернативных подрядчика как рычаг давления. Провести предварительные переговоры без раскрытия условий Титан.</td>
+              <td><span class="priority-badge p1">Высокий</span></td>
+            </tr>
+            <tr>
+              <td>Рост логистических тарифов рынка</td>
+              <td><span class="risk-badge medium">Средняя</span></td>
+              <td>Тендер среди 3+ перевозчиков. Долгосрочные договоры с фиксацией цены на 6–12 мес.</td>
+              <td><span class="priority-badge p2">Средний</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card instructions-card">
+        <h2 class="form-section-title">Custom Instructions для Claude</h2>
+        <div class="instructions-text">
+          <p>Настроить один раз в Settings → Custom Instructions:</p>
+          <pre>Я основатель нефтяной компании, добыча 1 000 т/мес.
+Ключевой контрагент — буровая компания Титан (38% расходов, требует KPI).
+Работаю дистанционно, получаю отчётность от директора ежемесячно.
+Целевые показатели: EBITDA ≥35%, себестоимость ≤₸55 000/т, расходы ≤65%.
+Стиль: деловой, лаконичный. Каждый вывод: что → почему → что делать.
+Алерты трёх уровней: критично / внимание / ок.
+Приоритет по финансовому эффекту и срочности.</pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
